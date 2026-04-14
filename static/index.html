@@ -46,6 +46,7 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
   background: var(--bg); color: var(--text);
   height: calc(100vh / 1.25); overflow: hidden; font-size: 13px; line-height: 1.5;
+  min-height: 0;
 }
 
 /* =================== TOP HEADER =================== */
@@ -98,7 +99,7 @@ body {
 .hdr-btn-primary:hover { background: var(--blue-dk); }
 
 /* =================== LEFT SIDEBAR =================== */
-.app-layout { display: flex; padding-top: var(--header-h); height: calc(100vh / 1.25); overflow: hidden; }
+.app-layout { display: flex; padding-top: var(--header-h); height: calc(100vh / 1.25); overflow: hidden; min-height: 0; }
 .sidebar {
   width: var(--sidebar-w); background: var(--sidebar-bg); flex-shrink: 0;
   display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden;
@@ -503,12 +504,13 @@ body {
 
 /* =================== REPORTING =================== */
 .report-grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 16px;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 14px; padding: 16px;
   flex: 1; overflow: auto; align-content: start;
 }
 .report-panel {
   background: var(--surface); border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm); border: 1px solid var(--border-lt); overflow: hidden;
+  min-width: 0;
 }
 .report-panel.full-width { grid-column: 1 / -1; }
 .report-panel-hdr {
@@ -516,38 +518,39 @@ body {
   display: flex; align-items: center; justify-content: space-between;
 }
 .report-panel-title { font-size: 11px; font-weight: 700; color: var(--text); text-transform: uppercase; letter-spacing: 0.3px; }
-.report-panel-body { padding: 14px; }
-.report-kpi { display: flex; gap: 14px; }
-.report-kpi-item { flex: 1; text-align: center; padding: 10px 6px; background: var(--bg); border-radius: var(--radius); }
-.report-kpi-num { font-size: 26px; font-weight: 800; line-height: 1; }
-.report-kpi-label { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
+.report-panel-body { padding: 14px; overflow: hidden; min-width: 0; }
+.report-kpi { display: flex; gap: 14px; flex-wrap: wrap; }
+.report-kpi-item { flex: 1 1 120px; text-align: center; padding: 10px 6px; background: var(--bg); border-radius: var(--radius); min-width: 0; }
+.report-kpi-num { font-size: clamp(18px, 2.5vw, 26px); font-weight: 800; line-height: 1; }
+.report-kpi-label { font-size: 10px; color: var(--text-muted); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .report-kpi-delta { font-size: 10px; margin-top: 2px; }
 .report-kpi-delta.up { color: var(--green-text); }
 .report-kpi-delta.down { color: var(--red-text); }
+.report-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .report-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-.report-table th { padding: 7px 10px; background: #f5f8fb; color: var(--text-muted); font-size: 10px; font-weight: 700; text-transform: uppercase; border-bottom: 1px solid var(--border); text-align: left; }
-.report-table td { padding: 7px 10px; border-bottom: 1px solid var(--border-lt); }
+.report-table th { padding: 7px 10px; background: #f5f8fb; color: var(--text-muted); font-size: 10px; font-weight: 700; text-transform: uppercase; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
+.report-table td { padding: 7px 10px; border-bottom: 1px solid var(--border-lt); white-space: nowrap; }
 .report-table tr:last-child td { border-bottom: none; }
 .report-hbar { display: flex; height: 22px; border-radius: 4px; overflow: hidden; margin-bottom: 6px; }
 .report-hbar-seg { transition: width 0.5s; min-width: 2px; }
 .report-legend { display: flex; gap: 12px; flex-wrap: wrap; }
-.report-legend-item { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-muted); }
+.report-legend-item { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-muted); white-space: nowrap; }
 .report-legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
-.report-donut-wrap { display: flex; align-items: center; gap: 20px; justify-content: center; }
-.report-donut { position: relative; width: 120px; height: 120px; }
+.report-donut-wrap { display: flex; align-items: center; gap: 20px; justify-content: center; flex-wrap: wrap; }
+.report-donut { position: relative; width: clamp(80px, 15vw, 120px); height: clamp(80px, 15vw, 120px); flex-shrink: 0; }
 .report-donut svg { width: 100%; height: 100%; transform: rotate(-90deg); }
 .report-donut-center {
   position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
   text-align: center;
 }
-.report-donut-num { font-size: 22px; font-weight: 800; color: var(--text); line-height: 1; }
+.report-donut-num { font-size: clamp(16px, 2vw, 22px); font-weight: 800; color: var(--text); line-height: 1; }
 .report-donut-label { font-size: 9px; color: var(--text-faint); margin-top: 2px; }
-.report-timeline { display: flex; flex-direction: column; gap: 4px; }
-.report-tl-row { display: flex; align-items: center; gap: 8px; }
-.report-tl-label { min-width: 55px; font-size: 10px; color: var(--text-faint); text-align: right; }
-.report-tl-bar { flex: 1; height: 18px; background: var(--bg); border-radius: 3px; overflow: hidden; position: relative; }
+.report-timeline { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.report-tl-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.report-tl-label { min-width: 55px; max-width: 100px; font-size: 10px; color: var(--text-faint); text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0; }
+.report-tl-bar { flex: 1; height: 18px; background: var(--bg); border-radius: 3px; overflow: hidden; position: relative; min-width: 40px; }
 .report-tl-fill { height: 100%; border-radius: 3px; display: flex; align-items: center; padding-left: 6px; font-size: 9px; font-weight: 600; color: #fff; min-width: 18px; }
-.report-tl-val { min-width: 28px; font-size: 11px; font-weight: 600; color: var(--text); }
+.report-tl-val { min-width: 28px; font-size: 11px; font-weight: 600; color: var(--text); flex-shrink: 0; }
 
 /* =================== MEDIA GALLERY =================== */
 .media-toolbar {
@@ -1571,7 +1574,7 @@ function renderReporting() {
   const assigneeSorted = Object.entries(assigneeCounts).sort((a, b) => b[1] - a[1]).slice(0, 8);
   const maxAssignee = assigneeSorted.length ? assigneeSorted[0][1] : 1;
   document.getElementById('reportAssignee').innerHTML = `<div class="report-timeline">${assigneeSorted.map(([name, count]) =>
-    `<div class="report-tl-row"><div class="report-tl-label" style="min-width:80px;text-align:left;font-size:11px;font-weight:500;color:var(--text)">${esc(name)}</div><div class="report-tl-bar"><div class="report-tl-fill" style="width:${(count/maxAssignee*100).toFixed(0)}%;background:var(--blue)">${count}</div></div></div>`
+    `<div class="report-tl-row"><div class="report-tl-label" style="text-align:left;font-size:11px;font-weight:500;color:var(--text)">${esc(name)}</div><div class="report-tl-bar"><div class="report-tl-fill" style="width:${(count/maxAssignee*100).toFixed(0)}%;background:var(--blue)">${count}</div></div></div>`
   ).join('')}</div>`;
 
   // Timeline — last 7 days
@@ -1585,7 +1588,7 @@ function renderReporting() {
   }).length));
   document.getElementById('reportTimeline').innerHTML = `<div class="report-timeline">${days.map(d => {
     const count = wos.filter(w => { const c = new Date(w.created_at); return c.toDateString() === d.date.toDateString(); }).length;
-    return `<div class="report-tl-row"><div class="report-tl-label" style="min-width:90px">${d.label}</div><div class="report-tl-bar"><div class="report-tl-fill" style="width:${(count/dayMax*100).toFixed(0)}%;background:var(--blue)">${count || ''}</div></div><div class="report-tl-val">${count}</div></div>`;
+    return `<div class="report-tl-row"><div class="report-tl-label">${d.label}</div><div class="report-tl-bar"><div class="report-tl-fill" style="width:${(count/dayMax*100).toFixed(0)}%;background:var(--blue)">${count || ''}</div></div><div class="report-tl-val">${count}</div></div>`;
   }).join('')}</div>`;
 
   // Location breakdown
@@ -1597,7 +1600,7 @@ function renderReporting() {
   const locSorted = Object.entries(locCounts).sort((a, b) => b[1] - a[1]).slice(0, 8);
   const maxLoc = locSorted.length ? locSorted[0][1] : 1;
   document.getElementById('reportLocation').innerHTML = `<div class="report-timeline">${locSorted.map(([name, count]) =>
-    `<div class="report-tl-row"><div class="report-tl-label" style="min-width:80px;text-align:left;font-size:11px;font-weight:500;color:var(--text)">${esc(name)}</div><div class="report-tl-bar"><div class="report-tl-fill" style="width:${(count/maxLoc*100).toFixed(0)}%;background:var(--orange)">${count}</div></div></div>`
+    `<div class="report-tl-row"><div class="report-tl-label" style="text-align:left;font-size:11px;font-weight:500;color:var(--text)">${esc(name)}</div><div class="report-tl-bar"><div class="report-tl-fill" style="width:${(count/maxLoc*100).toFixed(0)}%;background:var(--orange)">${count}</div></div></div>`
   ).join('')}</div>`;
 
   // Overdue table
@@ -1605,10 +1608,10 @@ function renderReporting() {
     document.getElementById('reportOverdue').innerHTML = '<div style="text-align:center;color:var(--text-faint);font-size:12px;padding:14px">No overdue issues</div>';
   } else {
     document.getElementById('reportOverdue').innerHTML = `
-      <table class="report-table"><thead><tr><th>Issue</th><th>Due</th><th>Status</th><th>Priority</th></tr></thead><tbody>${overdue.slice(0, 10).map(w => {
+      <div class="report-table-wrap"><table class="report-table"><thead><tr><th>Issue</th><th>Due</th><th>Status</th><th>Priority</th></tr></thead><tbody>${overdue.slice(0, 10).map(w => {
         const daysOver = Math.ceil((now - new Date(w.due_date)) / 86400000);
         return `<tr><td style="font-weight:600">${esc(w.wo_number)}</td><td style="color:var(--red-text);font-weight:600">${daysOver}d overdue</td><td><span class="badge ${badgeStatus(w.status)}">${esc(w.status)}</span></td><td><span class="badge ${badgePriority(w.priority)}">${esc(w.priority)}</span></td></tr>`;
-      }).join('')}</tbody></table>`;
+      }).join('')}</tbody></table></div>`;
   }
 }
 
