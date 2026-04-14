@@ -1,0 +1,2601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IssueTrak — Work Order Management</title>
+<style>
+/* =================== VARIABLES (IssueTrak palette) =================== */
+:root {
+  --sidebar-bg:    #243447;
+  --sidebar-hov:   rgba(255,255,255,0.07);
+  --sidebar-act:   rgba(59,130,246,0.18);
+  --sidebar-acc:   #5ba2f5;
+  --header-bg:     #1c2b3a;
+  --blue:          #0071c5;
+  --blue-dk:       #005da0;
+  --blue-lt:       #e6f1fb;
+  --white:         #ffffff;
+  --bg:            #eef2f6;
+  --surface:       #ffffff;
+  --border:        #d0dae6;
+  --border-lt:     #e4ebf2;
+  --text:          #1a2b3d;
+  --text-muted:    #5a6b80;
+  --text-faint:    #90a1b5;
+  --green:         #22c55e;
+  --green-bg:      #dcfce7;
+  --green-text:    #15803d;
+  --red:           #ef4444;
+  --red-bg:        #fee2e2;
+  --red-text:      #b91c1c;
+  --orange:        #f59e0b;
+  --orange-bg:     #fef3c7;
+  --orange-text:   #92400e;
+  --header-h:      48px;
+  --sidebar-w:     224px;
+  --radius:        6px;
+  --radius-lg:     8px;
+  --shadow-sm:     0 1px 3px rgba(0,0,0,0.07);
+  --shadow:        0 4px 12px rgba(0,0,0,0.09);
+  --shadow-lg:     0 20px 60px rgba(0,0,0,0.18);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { zoom: 1.25; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  background: var(--bg); color: var(--text);
+  height: calc(100vh / 1.25); overflow: hidden; font-size: 13px; line-height: 1.5;
+}
+
+/* =================== TOP HEADER =================== */
+.app-header {
+  position: fixed; top: 0; left: 0; right: 0; height: var(--header-h);
+  background: var(--header-bg); display: flex; align-items: center;
+  padding: 0 14px 0 0; z-index: 200;
+}
+.header-brand {
+  width: var(--sidebar-w); display: flex; align-items: center; gap: 9px;
+  padding: 0 14px; flex-shrink: 0; height: 100%;
+  border-right: 1px solid rgba(255,255,255,0.08);
+}
+.brand-logo {
+  width: 30px; height: 30px; background: var(--blue); border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800; color: #fff; flex-shrink: 0;
+}
+.brand-name { color: #fff; font-size: 14px; font-weight: 700; }
+.brand-sub { color: rgba(255,255,255,0.4); font-size: 9px; text-transform: uppercase; letter-spacing: 0.6px; }
+.header-search { flex: 0 1 400px; padding: 0 18px; }
+.header-search-box {
+  width: 100%; padding: 6px 12px 6px 32px;
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--radius); color: #fff; font-size: 12px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' fill='rgba(255,255,255,0.4)' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.742 1.656a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: 10px center;
+}
+.header-search-box::placeholder { color: rgba(255,255,255,0.35); }
+.header-search-box:focus { outline: none; border-color: var(--blue); background: rgba(255,255,255,0.12); }
+.header-spacer { flex: 1; }
+.header-actions { display: flex; align-items: center; gap: 8px; }
+.sync-pill {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px; padding: 4px 11px; font-size: 11px; color: rgba(255,255,255,0.6);
+}
+.sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s ease-in-out infinite; flex-shrink: 0; }
+.sync-dot.offline { background: #64748b; animation: none; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+.hdr-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 5px 11px; border: 1px solid rgba(255,255,255,0.15);
+  border-radius: var(--radius); background: transparent;
+  color: rgba(255,255,255,0.65); font-size: 11px; cursor: pointer;
+  transition: all 0.15s; white-space: nowrap;
+}
+.hdr-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.hdr-btn-primary { background: var(--blue); border-color: var(--blue); color: #fff; font-weight: 600; }
+.hdr-btn-primary:hover { background: var(--blue-dk); }
+
+/* =================== LEFT SIDEBAR =================== */
+.app-layout { display: flex; padding-top: var(--header-h); height: calc(100vh / 1.25); overflow: hidden; }
+.sidebar {
+  width: var(--sidebar-w); background: var(--sidebar-bg); flex-shrink: 0;
+  display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden;
+  border-right: 1px solid rgba(255,255,255,0.06); height: 100%;
+}
+.sidebar-new-btn {
+  margin: 10px 12px; padding: 8px 12px;
+  background: var(--blue); color: #fff; border: none; border-radius: var(--radius);
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+  transition: background 0.15s; flex-shrink: 0;
+}
+.sidebar-new-btn:hover { background: var(--blue-dk); }
+.sidebar-group { padding: 6px 0; }
+.sidebar-group-label {
+  padding: 6px 16px 3px; font-size: 9px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.8px; color: rgba(255,255,255,0.25);
+}
+.sidebar-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 14px; cursor: pointer; color: rgba(255,255,255,0.6);
+  font-size: 12px; transition: background 0.1s, color 0.1s;
+  border-left: 3px solid transparent; user-select: none;
+}
+.sidebar-item:hover { background: var(--sidebar-hov); color: rgba(255,255,255,0.85); }
+.sidebar-item.active { background: var(--sidebar-act); color: #fff; border-left-color: var(--sidebar-acc); }
+.sidebar-icon { font-size: 13px; flex-shrink: 0; opacity: 0.7; width: 18px; text-align: center; }
+.sidebar-item.active .sidebar-icon { opacity: 1; }
+.sidebar-badge {
+  margin-left: auto; background: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.6); font-size: 9px; font-weight: 600;
+  padding: 1px 5px; border-radius: 8px;
+}
+.sidebar-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 4px 12px; }
+.sidebar-item.placeholder { opacity: 0.45; }
+
+/* =================== MAIN CONTENT =================== */
+.main-content { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+.tab-pane { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+.tab-pane.active { display: flex; }
+
+/* =================== TOOLBAR =================== */
+.toolbar {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 14px; gap: 8px;
+  flex-shrink: 0; height: 42px; overflow-x: auto;
+}
+.toolbar-title { font-size: 13px; font-weight: 600; white-space: nowrap; }
+.toolbar-spacer { flex: 1; }
+.search-box {
+  padding: 5px 10px 5px 28px; border: 1px solid var(--border); border-radius: var(--radius);
+  font-size: 12px; width: 220px; background: var(--bg)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' fill='%2390a1b5' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.742 1.656a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z'/%3E%3C/svg%3E")
+    no-repeat 8px center;
+}
+.search-box:focus { outline: none; border-color: var(--blue); background-color: var(--surface); }
+.filter-sel {
+  padding: 5px 24px 5px 9px; border: 1px solid var(--border); border-radius: var(--radius);
+  font-size: 12px; color: var(--text-muted); background: var(--bg); cursor: pointer; width: 140px;
+}
+.filter-sel:focus { outline: none; border-color: var(--blue); }
+.count-chip { background: #e8eef5; color: var(--text-muted); font-size: 11px; padding: 2px 9px; border-radius: 10px; font-weight: 500; white-space: nowrap; }
+
+/* =================== BUTTONS =================== */
+.btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 5px 11px; border: none; border-radius: var(--radius);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  transition: all 0.15s; white-space: nowrap; line-height: 1;
+}
+.btn-sm { padding: 4px 9px; font-size: 11px; }
+.btn-primary { background: var(--blue); color: #fff; }
+.btn-primary:hover { background: var(--blue-dk); }
+.btn-outline { background: var(--surface); color: var(--text-muted); border: 1px solid var(--border); }
+.btn-outline:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-lt); }
+.btn-delete { background: transparent; color: var(--red-text); border: 1px solid var(--border); }
+.btn-delete:hover { background: var(--red-bg); border-color: var(--red); }
+
+/* =================== SPLIT VIEW =================== */
+.split-view { flex: 1; display: flex; overflow: hidden; }
+.resize-handle {
+  width: 4px; flex-shrink: 0; cursor: col-resize;
+  background: transparent; position: relative; z-index: 5; transition: background 0.15s;
+}
+.resize-handle:hover, .resize-handle.dragging { background: var(--blue); }
+
+/* =================== WO LIST PANE =================== */
+.wo-list-pane { width: 320px; flex-shrink: 0; overflow: auto; background: var(--surface); border-right: 1px solid var(--border); }
+.wo-item {
+  padding: 9px 12px; border-bottom: 1px solid var(--border-lt);
+  cursor: pointer; transition: background 0.08s;
+  border-left: 3px solid transparent; user-select: none;
+}
+.wo-item:hover { background: #f6f8fb; }
+.wo-item.active { background: var(--blue-lt); border-left-color: var(--blue); }
+.wo-item.pri-high   { border-left-color: var(--red); }
+.wo-item.pri-medium { border-left-color: var(--orange); }
+.wo-item.pri-low    { border-left-color: var(--green); }
+.wo-item.pri-none   { border-left-color: #dde4ec; }
+.wo-item.active.pri-high, .wo-item.active.pri-medium,
+.wo-item.active.pri-low, .wo-item.active.pri-none { border-left-color: var(--blue); }
+.wo-item.selected { background: #d6e8ff; }
+.wo-item-row { display: flex; align-items: flex-start; gap: 7px; }
+.wo-check { width: 15px; height: 15px; accent-color: var(--blue); cursor: pointer; flex-shrink: 0; margin-top: 2px; }
+.wo-item-body { flex: 1; min-width: 0; }
+.wo-item-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; gap: 6px; }
+.wo-number { font-size: 10px; color: var(--text-faint); font-weight: 600; letter-spacing: 0.3px; }
+.wo-title { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 4px; line-height: 1.3; }
+.wo-meta { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.wo-indicators { display: flex; gap: 3px; margin-bottom: 2px; }
+.wo-ind {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; border-radius: 3px;
+  font-size: 9px; font-weight: 800; flex-shrink: 0;
+}
+.wo-ind-sc { background: var(--blue-lt); color: var(--blue); }
+
+/* Selection footer */
+.selection-footer {
+  position: sticky; bottom: 0; background: var(--sidebar-bg); color: #fff;
+  padding: 8px 12px; display: flex; align-items: center; justify-content: space-between;
+  font-size: 12px; font-weight: 500; z-index: 10;
+  box-shadow: 0 -4px 12px rgba(0,0,0,0.12); animation: slideUp 0.15s ease-out;
+}
+.selection-footer .sel-count { display: flex; align-items: center; gap: 6px; }
+.selection-footer .sel-actions { display: flex; align-items: center; gap: 6px; }
+.btn-sel-clear { background: transparent; color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.2); padding: 3px 9px; border-radius: var(--radius); font-size: 11px; cursor: pointer; }
+.btn-sel-clear:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.btn-sel-delete { background: var(--red); color: #fff; border: none; padding: 4px 12px; border-radius: var(--radius); font-size: 11px; font-weight: 600; cursor: pointer; }
+.btn-sel-delete:hover { background: #dc2626; }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+/* =================== BADGES =================== */
+.badge { display: inline-flex; align-items: center; padding: 1px 6px; border-radius: 8px; font-size: 10px; font-weight: 600; white-space: nowrap; }
+.b-open        { background: var(--blue-lt);  color: var(--blue); }
+.b-in-progress { background: var(--orange-bg); color: var(--orange-text); }
+.b-completed   { background: var(--green-bg);  color: var(--green-text); }
+.b-cancelled   { background: var(--red-bg);    color: var(--red-text); }
+.b-high   { background: var(--red-bg);    color: var(--red-text); }
+.b-medium { background: var(--orange-bg); color: var(--orange-text); }
+.b-low    { background: var(--green-bg);  color: var(--green-text); }
+.b-none   { background: #f0f3f7; color: #94a3b8; }
+.b-sc     { background: var(--blue-lt); color: var(--blue); }
+.due-chip { font-size: 10px; color: var(--text-faint); }
+.due-chip.overdue { color: var(--red-text); font-weight: 600; }
+
+/* =================== WO DETAIL PANE =================== */
+.wo-detail-pane { flex: 1; overflow: hidden; background: var(--bg); display: flex; flex-direction: column; }
+.wo-detail-scroll { flex: 1; overflow: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+.wo-detail-scroll > * { flex-shrink: 0; }
+
+/* Detail top bar */
+.detail-top-bar {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 10px 16px; display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+}
+.detail-wo-badge {
+  font-size: 10px; font-weight: 700; color: var(--blue);
+  background: var(--blue-lt); padding: 2px 7px; border-radius: 4px; flex-shrink: 0;
+}
+.detail-title-display {
+  font-size: 13px; font-weight: 600; flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.save-indicator { font-size: 11px; min-width: 65px; text-align: right; }
+.save-indicator.saving { color: var(--orange-text); }
+.save-indicator.saved  { color: var(--green-text); }
+.save-indicator.error  { color: var(--red-text); }
+
+/* Detail tabs */
+.detail-tabs-bar {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 16px; gap: 0; flex-shrink: 0;
+  overflow-x: auto;
+}
+.detail-tab {
+  padding: 8px 13px; cursor: pointer; font-size: 11px; font-weight: 500;
+  color: var(--text-muted); border-bottom: 2px solid transparent;
+  white-space: nowrap; transition: color 0.12s;
+  background: none; border-left: none; border-right: none; border-top: none;
+  display: flex; align-items: center; gap: 4px;
+}
+.detail-tab:hover { color: var(--blue); }
+.detail-tab.active { color: var(--blue); border-bottom-color: var(--blue); font-weight: 600; }
+.detail-tab .tab-badge {
+  background: var(--red); color: #fff; font-size: 9px; font-weight: 700;
+  padding: 0 4px; border-radius: 6px; min-width: 14px; text-align: center; line-height: 14px;
+}
+.detail-tab-pane { display: none; }
+.detail-tab-pane.active { display: block; }
+
+/* Detail cards */
+.detail-card { background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); overflow: hidden; border: 1px solid var(--border-lt); }
+.detail-header { padding: 12px 16px 10px; border-bottom: 1px solid var(--border-lt); display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.detail-header-left { flex: 1; min-width: 0; }
+.detail-wo-num { font-size: 10px; font-weight: 700; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.detail-controls { display: flex; gap: 6px; flex-wrap: wrap; }
+.ctrl-select {
+  padding: 5px 28px 5px 10px; border: 1.5px solid var(--border); border-radius: var(--radius);
+  font-size: 13px; font-weight: 600; cursor: pointer; appearance: none;
+  background-repeat: no-repeat; background-position: right 8px center;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' fill='%2390a1b5' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  background-color: var(--surface); transition: border-color 0.15s;
+}
+.ctrl-select:focus { outline: none; box-shadow: 0 0 0 3px rgba(0,113,197,0.1); }
+.ctrl-select.s-open        { background-color: var(--blue-lt);  border-color: var(--blue);   color: var(--blue); }
+.ctrl-select.s-in-progress { background-color: var(--orange-bg); border-color: var(--orange); color: var(--orange-text); }
+.ctrl-select.s-completed   { background-color: var(--green-bg); border-color: #16a34a; color: var(--green-text); }
+.ctrl-select.s-cancelled   { background-color: var(--red-bg);   border-color: var(--red);  color: var(--red-text); }
+.ctrl-select.p-high   { background-color: var(--red-bg);    border-color: var(--red);    color: var(--red-text); }
+.ctrl-select.p-medium { background-color: var(--orange-bg); border-color: var(--orange); color: var(--orange-text); }
+.ctrl-select.p-low    { background-color: var(--green-bg);  border-color: #16a34a;       color: var(--green-text); }
+.ctrl-select.p-none   { background-color: #f1f5f9;          border-color: #e2e8f0;       color: #94a3b8; }
+
+.detail-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 3px; }
+.field label { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
+.field input[type="text"], .field input[type="date"], .field textarea {
+  padding: 6px 9px; border: 1px solid var(--border); border-radius: var(--radius);
+  font-size: 13px; font-family: inherit; color: var(--text); background: var(--surface);
+  transition: border-color 0.15s; width: 100%;
+}
+.field input:focus, .field textarea:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,113,197,0.08); }
+.field textarea { resize: vertical; min-height: 60px; line-height: 1.5; }
+.field-title input { font-size: 14px; font-weight: 600; }
+.field-row { display: flex; gap: 10px; }
+.field-row .field { flex: 1; }
+.field-placeholder {
+  padding: 6px 9px; border: 1px dashed var(--border); border-radius: var(--radius);
+  font-size: 11px; color: var(--text-faint); font-style: italic; background: #f8fafb;
+}
+.sc-box {
+  padding: 9px 11px; border-radius: var(--radius); border: 1px solid #86efac;
+  background: var(--green-bg); display: flex; align-items: flex-start; gap: 8px; font-size: 12px;
+}
+.sc-box.unlinked { border-color: var(--border); background: #f8fafc; }
+.sc-box-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+.sc-box-text { flex: 1; }
+.sc-box-label { font-weight: 600; color: var(--green-text); font-size: 11px; }
+.sc-box.unlinked .sc-box-label { color: var(--text-muted); }
+.sc-box-id { font-family: monospace; font-size: 10px; color: var(--text-faint); margin-top: 1px; }
+.sc-box-sync { font-size: 10px; color: var(--text-faint); margin-top: 1px; }
+.sc-box-link { font-size: 11px; font-weight: 500; color: var(--blue); text-decoration: none; display: inline-flex; align-items: center; gap: 3px; margin-top: 3px; }
+.sc-box-link:hover { text-decoration: underline; }
+.sc-box-links { display: flex; flex-direction: column; gap: 1px; }
+.sc-integration-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+/* =================== COMMENT COMPOSE =================== */
+.comment-compose {
+  background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-lt); padding: 10px 14px; margin-top: 8px;
+}
+.comment-compose-hint { font-size: 9px; color: var(--text-faint); margin-bottom: 6px; display: block; }
+.comment-compose-row { display: flex; align-items: flex-end; gap: 8px; }
+.comment-compose-row textarea {
+  flex: 1; padding: 8px 12px; border: 1px solid var(--border);
+  border-radius: var(--radius); font-size: 12px; font-family: inherit;
+  resize: vertical; min-height: 40px; height: 60px; line-height: 1.5; background: var(--bg);
+  transition: border-color 0.2s;
+}
+.comment-compose-row textarea:focus {
+  outline: none; border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(0,113,197,0.08);
+}
+.comment-send {
+  width: 32px; height: 32px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--blue); color: #fff; border: none; border-radius: 50%;
+  cursor: pointer; font-size: 14px; transition: background 0.15s, transform 0.15s;
+  box-shadow: 0 2px 6px rgba(0,113,197,0.2);
+}
+.comment-send:hover { background: var(--blue-dk); transform: scale(1.06); }
+.comment-send:active { transform: scale(0.95); }
+.detail-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: var(--text-muted); text-align: center; padding: 40px; }
+.detail-empty-icon { font-size: 44px; opacity: 0.2; }
+.detail-empty-title { font-size: 14px; font-weight: 600; }
+.detail-empty-sub { font-size: 12px; max-width: 240px; line-height: 1.6; color: var(--text-faint); }
+
+/* Section divider */
+.section-head { display: flex; align-items: center; gap: 8px; }
+.section-line { flex: 1; height: 1px; background: var(--border); }
+.section-label { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+
+/* =================== COMMENTS =================== */
+.comments-card { background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); overflow: hidden; border: 1px solid var(--border-lt); }
+.comment-list { padding: 2px 16px; }
+.comment-item { padding: 10px 0; border-bottom: 1px solid var(--border-lt); }
+.comment-item:last-child { border-bottom: none; }
+.comment-meta { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; flex-wrap: wrap; }
+.comment-author { font-size: 12px; font-weight: 600; }
+.comment-src { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; padding: 1px 5px; border-radius: 3px; }
+.comment-src.from-sc { background: var(--blue-lt); color: var(--blue); }
+.comment-src.from-issuetracker { background: #fff8e1; color: #b45309; }
+.comment-time { font-size: 10px; color: var(--text-faint); }
+.comment-body { font-size: 12px; color: var(--text); line-height: 1.6; }
+
+/* =================== OBJECTS TAB =================== */
+.obj-toolbar {
+  height: 42px; background: var(--surface); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 14px; gap: 8px; flex-shrink: 0;
+}
+.obj-pane { flex: 1; overflow: auto; padding: 14px; }
+.obj-table-wrap { background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); overflow: auto; border: 1px solid var(--border-lt); }
+.obj-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.obj-table th { padding: 7px 12px; background: #f5f8fb; color: var(--text-muted); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
+.obj-table td { padding: 8px 12px; border-bottom: 1px solid var(--border-lt); vertical-align: middle; }
+.obj-table tr:last-child td { border-bottom: none; }
+.obj-table tr:hover td { background: #f8fafc; }
+.obj-sync-info { font-size: 11px; color: var(--text-faint); }
+
+/* =================== API LOG =================== */
+.log-scroll { flex: 1; overflow: auto; padding: 14px; }
+.log-table { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); overflow: hidden; font-size: 12px; border: 1px solid var(--border-lt); }
+.log-table th { padding: 7px 10px; background: #f5f8fb; color: var(--text-muted); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
+.log-table td { padding: 8px 10px; border-bottom: 1px solid var(--border-lt); vertical-align: top; }
+.log-table tr:last-child td { border-bottom: none; }
+.log-table tr:hover td { background: #f8fafc; }
+.dir-sc-it { display: inline-block; background: var(--blue-lt); color: var(--blue); padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 700; white-space: nowrap; }
+.dir-it-sc { display: inline-block; background: #fff8e1; color: #b45309; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 700; white-space: nowrap; }
+.st-ok    { color: var(--green-text); font-weight: 600; }
+.st-error { color: var(--red-text);   font-weight: 600; }
+.log-empty { text-align: center; padding: 28px; color: var(--text-faint); }
+
+/* =================== PLACEHOLDER PANE =================== */
+.placeholder-pane {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; padding: 40px; color: var(--text-muted);
+}
+.placeholder-icon { font-size: 48px; opacity: 0.2; }
+.placeholder-title { font-size: 16px; font-weight: 700; color: var(--text); }
+.placeholder-sub { font-size: 12px; color: var(--text-faint); max-width: 340px; text-align: center; line-height: 1.7; }
+.placeholder-badge { padding: 3px 10px; background: #f0f3f7; border: 1px solid var(--border); border-radius: 10px; font-size: 10px; color: var(--text-muted); font-weight: 500; }
+
+/* =================== DASHBOARD =================== */
+.dashboard-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 16px;
+  flex: 1; overflow: auto; align-content: start;
+}
+.dash-panel {
+  background: var(--surface); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm); border: 1px solid var(--border-lt); overflow: hidden;
+}
+.dash-panel-hdr {
+  padding: 9px 14px; border-bottom: 1px solid var(--border-lt);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.dash-panel-title { font-size: 11px; font-weight: 700; color: var(--text); text-transform: uppercase; letter-spacing: 0.3px; }
+.dash-panel-body { padding: 14px; }
+.dash-stat { text-align: center; padding: 10px 0; }
+.dash-stat-num { font-size: 32px; font-weight: 800; color: var(--blue); line-height: 1; }
+.dash-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+.dash-bar-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; }
+.dash-bar-label { min-width: 70px; font-size: 11px; color: var(--text-muted); }
+.dash-bar-track { flex: 1; height: 7px; background: #eef2f6; border-radius: 4px; overflow: hidden; }
+.dash-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
+.dash-bar-count { min-width: 24px; text-align: right; font-size: 11px; font-weight: 600; color: var(--text); }
+.dash-recent-item {
+  display: flex; align-items: center; gap: 8px; padding: 7px 0;
+  border-bottom: 1px solid var(--border-lt); font-size: 12px;
+}
+.dash-recent-item:last-child { border-bottom: none; }
+
+/* =================== KNOWLEDGE BASE =================== */
+.kb-layout { flex: 1; display: flex; overflow: hidden; }
+.kb-sidebar {
+  width: 240px; flex-shrink: 0; overflow-y: auto; background: var(--surface);
+  border-right: 1px solid var(--border); padding: 10px 0;
+}
+.kb-cat-label {
+  padding: 8px 16px 4px; font-size: 9px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.6px; color: var(--text-faint);
+}
+.kb-article-link {
+  display: block; padding: 6px 16px 6px 24px; font-size: 12px; color: var(--text-muted);
+  cursor: pointer; transition: background 0.1s, color 0.1s; border-left: 3px solid transparent;
+  text-decoration: none;
+}
+.kb-article-link:hover { background: var(--blue-lt); color: var(--blue); }
+.kb-article-link.active { background: var(--blue-lt); color: var(--blue); border-left-color: var(--blue); font-weight: 600; }
+.kb-content { flex: 1; overflow-y: auto; padding: 20px 28px; }
+.kb-article { max-width: 760px; }
+.kb-article h1 { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+.kb-article .kb-meta { font-size: 11px; color: var(--text-faint); margin-bottom: 16px; }
+.kb-article h2 { font-size: 15px; font-weight: 700; color: var(--text); margin: 20px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border-lt); }
+.kb-article h3 { font-size: 13px; font-weight: 700; color: var(--text); margin: 14px 0 6px; }
+.kb-article p { font-size: 13px; line-height: 1.7; color: var(--text); margin-bottom: 10px; }
+.kb-article ul, .kb-article ol { font-size: 13px; line-height: 1.7; padding-left: 22px; margin-bottom: 10px; }
+.kb-article li { margin-bottom: 4px; }
+.kb-article code { background: #f0f4f8; padding: 1px 5px; border-radius: 3px; font-size: 12px; color: var(--blue-dk); }
+.kb-article pre { background: #f0f4f8; border: 1px solid var(--border-lt); border-radius: var(--radius); padding: 12px; overflow-x: auto; margin-bottom: 12px; font-size: 12px; line-height: 1.5; }
+.kb-article pre code { background: none; padding: 0; }
+.kb-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 14px; }
+.kb-table th { padding: 7px 10px; background: #f5f8fb; color: var(--text-muted); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; border: 1px solid var(--border-lt); text-align: left; }
+.kb-table td { padding: 7px 10px; border: 1px solid var(--border-lt); vertical-align: top; }
+.kb-callout {
+  border-left: 3px solid var(--blue); background: var(--blue-lt); padding: 10px 14px;
+  border-radius: 0 var(--radius) var(--radius) 0; margin-bottom: 12px; font-size: 12px; line-height: 1.6;
+}
+.kb-callout.warn { border-left-color: var(--orange); background: var(--orange-bg); }
+.kb-callout.danger { border-left-color: var(--red); background: var(--red-bg); }
+.kb-callout strong { font-weight: 700; }
+
+/* =================== REPORTING =================== */
+.report-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 16px;
+  flex: 1; overflow: auto; align-content: start;
+}
+.report-panel {
+  background: var(--surface); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm); border: 1px solid var(--border-lt); overflow: hidden;
+}
+.report-panel.full-width { grid-column: 1 / -1; }
+.report-panel-hdr {
+  padding: 9px 14px; border-bottom: 1px solid var(--border-lt);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.report-panel-title { font-size: 11px; font-weight: 700; color: var(--text); text-transform: uppercase; letter-spacing: 0.3px; }
+.report-panel-body { padding: 14px; }
+.report-kpi { display: flex; gap: 14px; }
+.report-kpi-item { flex: 1; text-align: center; padding: 10px 6px; background: var(--bg); border-radius: var(--radius); }
+.report-kpi-num { font-size: 26px; font-weight: 800; line-height: 1; }
+.report-kpi-label { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
+.report-kpi-delta { font-size: 10px; margin-top: 2px; }
+.report-kpi-delta.up { color: var(--green-text); }
+.report-kpi-delta.down { color: var(--red-text); }
+.report-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.report-table th { padding: 7px 10px; background: #f5f8fb; color: var(--text-muted); font-size: 10px; font-weight: 700; text-transform: uppercase; border-bottom: 1px solid var(--border); text-align: left; }
+.report-table td { padding: 7px 10px; border-bottom: 1px solid var(--border-lt); }
+.report-table tr:last-child td { border-bottom: none; }
+.report-hbar { display: flex; height: 22px; border-radius: 4px; overflow: hidden; margin-bottom: 6px; }
+.report-hbar-seg { transition: width 0.5s; min-width: 2px; }
+.report-legend { display: flex; gap: 12px; flex-wrap: wrap; }
+.report-legend-item { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-muted); }
+.report-legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+.report-donut-wrap { display: flex; align-items: center; gap: 20px; justify-content: center; }
+.report-donut { position: relative; width: 120px; height: 120px; }
+.report-donut svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.report-donut-center {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  text-align: center;
+}
+.report-donut-num { font-size: 22px; font-weight: 800; color: var(--text); line-height: 1; }
+.report-donut-label { font-size: 9px; color: var(--text-faint); margin-top: 2px; }
+.report-timeline { display: flex; flex-direction: column; gap: 4px; }
+.report-tl-row { display: flex; align-items: center; gap: 8px; }
+.report-tl-label { min-width: 55px; font-size: 10px; color: var(--text-faint); text-align: right; }
+.report-tl-bar { flex: 1; height: 18px; background: var(--bg); border-radius: 3px; overflow: hidden; position: relative; }
+.report-tl-fill { height: 100%; border-radius: 3px; display: flex; align-items: center; padding-left: 6px; font-size: 9px; font-weight: 600; color: #fff; min-width: 18px; }
+.report-tl-val { min-width: 28px; font-size: 11px; font-weight: 600; color: var(--text); }
+
+/* =================== MEDIA GALLERY =================== */
+.media-toolbar {
+  height: 42px; background: var(--surface); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 14px; gap: 8px; flex-shrink: 0;
+}
+.media-pane { flex: 1; overflow: auto; padding: 14px; display: flex; flex-direction: column; gap: 16px; }
+.media-wo-group { background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); overflow: hidden; border: 1px solid var(--border-lt); }
+.media-wo-header {
+  padding: 10px 14px; border-bottom: 1px solid var(--border-lt);
+  display: flex; align-items: center; gap: 10px; cursor: pointer;
+}
+.media-wo-title { flex: 1; }
+.media-wo-num { font-size: 10px; font-weight: 700; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.4px; }
+.media-wo-name { font-size: 12px; font-weight: 600; color: var(--text); margin-top: 1px; }
+.media-grid {
+  padding: 12px 14px;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px;
+}
+.media-thumb {
+  border-radius: var(--radius); overflow: hidden; cursor: pointer;
+  background: var(--bg); border: 1px solid var(--border);
+  transition: transform 0.12s, box-shadow 0.12s;
+  position: relative; display: flex; flex-direction: column;
+}
+.media-thumb:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.media-thumb-img { width: 100%; height: 100px; object-fit: cover; display: block; background: #f0f3f7; }
+.media-thumb-icon { width: 100%; height: 100px; display: flex; align-items: center; justify-content: center; font-size: 32px; background: #f0f3f7; color: var(--text-faint); }
+.media-thumb-body { padding: 5px 7px; }
+.media-thumb-label { font-size: 10px; font-weight: 500; color: var(--text); line-height: 1.3; word-break: break-word; }
+.media-source-badge { position: absolute; top: 4px; left: 4px; font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; padding: 1px 4px; border-radius: 3px; }
+.src-sc { background: var(--blue-lt); color: var(--blue); }
+.src-it { background: #fff8e1; color: #b45309; }
+.media-delete-btn {
+  position: absolute; top: 4px; right: 4px;
+  background: rgba(0,0,0,0.4); color: #fff; border: none;
+  border-radius: 50%; width: 18px; height: 18px; font-size: 10px; line-height: 1;
+  cursor: pointer; display: none; align-items: center; justify-content: center;
+}
+.media-thumb:hover .media-delete-btn { display: flex; }
+.media-upload-area {
+  border: 2px dashed var(--border); border-radius: var(--radius);
+  padding: 18px; text-align: center; cursor: pointer; color: var(--text-faint);
+  font-size: 11px; transition: border-color 0.15s, background 0.15s;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  min-height: 100px; justify-content: center;
+}
+.media-upload-area:hover, .media-upload-area.drag-over {
+  border-color: var(--blue); background: var(--blue-lt); color: var(--blue);
+}
+.media-upload-icon { font-size: 22px; }
+.media-empty { padding: 24px; text-align: center; color: var(--text-faint); font-size: 12px; }
+
+/* WO detail media */
+.wo-media-section { display: flex; flex-direction: column; gap: 8px; }
+.wo-media-row-header { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.wo-media-link { font-size: 11px; font-weight: 500; color: var(--blue); text-decoration: none; display: inline-flex; align-items: center; gap: 3px; }
+.wo-media-link:hover { text-decoration: underline; }
+.wo-media-mini-grid { display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-start; }
+.wo-mini-thumb {
+  width: 72px; height: 54px; border-radius: var(--radius); overflow: hidden;
+  cursor: pointer; border: 1px solid var(--border); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: #f1f5f9; position: relative; transition: transform 0.1s;
+}
+.wo-mini-thumb:hover { transform: scale(1.04); }
+.wo-mini-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.wo-mini-thumb-icon { font-size: 18px; color: var(--text-faint); }
+
+/* Lightbox */
+.lightbox {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.88);
+  z-index: 500; align-items: center; justify-content: center; flex-direction: column; gap: 10px;
+}
+.lightbox.open { display: flex; }
+.lightbox-img { max-width: 90vw; max-height: 80vh; border-radius: var(--radius); box-shadow: 0 8px 40px rgba(0,0,0,0.5); }
+.lightbox-label { color: rgba(255,255,255,0.8); font-size: 13px; font-weight: 500; }
+.lightbox-close {
+  position: fixed; top: 16px; right: 20px; background: rgba(255,255,255,0.15);
+  border: none; color: #fff; font-size: 18px; cursor: pointer; border-radius: 50%;
+  width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+}
+.lightbox-close:hover { background: rgba(255,255,255,0.25); }
+.lightbox-src { font-size: 10px; color: rgba(255,255,255,0.4); }
+
+/* =================== MODAL =================== */
+.modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 300; align-items: center; justify-content: center; }
+.modal-backdrop.open { display: flex; }
+.modal { background: var(--surface); border-radius: var(--radius-lg); width: 540px; max-width: calc(100vw - 40px); max-height: calc(100vh / 1.25 - 80px); overflow-y: auto; box-shadow: var(--shadow-lg); }
+.modal-hdr { padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-lt); }
+.modal-hdr h3 { font-size: 15px; font-weight: 700; }
+.modal-x { background: none; border: none; font-size: 16px; color: var(--text-faint); cursor: pointer; padding: 2px 5px; border-radius: 4px; }
+.modal-x:hover { background: #f1f5f9; color: var(--text); }
+.modal-body { padding: 14px 18px; }
+.modal-foot { padding: 0 18px 16px; display: flex; gap: 8px; justify-content: flex-end; border-top: 1px solid var(--border-lt); padding-top: 12px; margin-top: 4px; }
+.fg { margin-bottom: 10px; display: flex; flex-direction: column; gap: 3px; }
+.fg label { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
+.fg label .req { color: var(--red); }
+.fg input, .fg select, .fg textarea {
+  padding: 6px 9px; border: 1px solid var(--border); border-radius: var(--radius);
+  font-size: 13px; font-family: inherit; color: var(--text); width: 100%;
+  background: var(--surface); transition: border-color 0.15s;
+}
+.fg select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%2390a1b5' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 9px center; background-color: var(--surface); padding-right: 26px; }
+.fg input:focus, .fg select:focus, .fg textarea:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,113,197,0.08); }
+.fg textarea { resize: vertical; min-height: 55px; line-height: 1.5; }
+.fg-row { display: flex; gap: 10px; }
+.fg-row .fg { flex: 1; }
+.fg-hint { font-size: 10px; color: var(--text-faint); margin-top: 2px; }
+.modal-section-label {
+  font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;
+  letter-spacing: 0.4px; margin: 14px 0 8px; padding-bottom: 5px; border-bottom: 1px solid var(--border-lt);
+}
+
+/* Empty state */
+.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 16px; color: var(--text-faint); text-align: center; gap: 4px; }
+.empty-state p { font-size: 12px; }
+
+/* Toast */
+.toast { position: fixed; bottom: 18px; right: 18px; background: var(--sidebar-bg); color: #fff; padding: 8px 14px; border-radius: var(--radius); font-size: 12px; box-shadow: var(--shadow-lg); z-index: 999; opacity: 0; pointer-events: none; transform: translateY(8px); transition: opacity 0.2s, transform 0.2s; }
+.toast.show { opacity: 1; pointer-events: auto; transform: translateY(0); }
+
+/* Picklist */
+.pick-wrap { position: relative; }
+.pick-wrap .pick-caret { position: absolute; right: 9px; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--text-faint); font-size: 9px; transition: transform 0.2s; }
+.pick-wrap.open .pick-caret { transform: translateY(-50%) rotate(180deg); }
+.pick-dd {
+  position: absolute; top: calc(100% + 2px); left: 0; right: 0;
+  background: var(--surface); border: 1.5px solid var(--blue);
+  border-radius: var(--radius); max-height: 190px; overflow-y: auto;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1); z-index: 100;
+  opacity: 0; transform: translateY(-5px); pointer-events: none;
+  transition: opacity 0.12s, transform 0.12s;
+}
+.pick-dd.open { opacity: 1; transform: translateY(0); pointer-events: auto; }
+.pick-opt { padding: 6px 9px; cursor: pointer; font-size: 12px; display: flex; flex-direction: column; gap: 1px; transition: background 0.08s; }
+.pick-opt:hover, .pick-opt.hl { background: var(--blue-lt); }
+.pick-opt-label { font-weight: 500; color: var(--text); }
+.pick-opt-sub { font-size: 10px; color: var(--text-faint); }
+.pick-opt mark { background: #fef08a; color: inherit; border-radius: 2px; padding: 0 1px; }
+.pick-empty { padding: 10px; text-align: center; font-size: 11px; color: var(--text-faint); }
+
+/* Scrollbars */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #c0ccd8; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #a0b0c0; }
+</style>
+</head>
+<body>
+
+<!-- ===== TOP HEADER ===== -->
+<header class="app-header">
+  <div class="header-brand">
+    <div class="brand-logo">IT</div>
+    <div>
+      <div class="brand-name">IssueTrak</div>
+      <div class="brand-sub">Work Orders</div>
+    </div>
+  </div>
+  <div class="header-search">
+    <input type="text" class="header-search-box" placeholder="Search issues by number or subject...">
+  </div>
+  <div class="header-spacer"></div>
+  <div class="header-actions">
+    <div class="sync-pill">
+      <span class="sync-dot offline" id="syncDot"></span>
+      <span id="syncStatus">Connecting...</span>
+    </div>
+    <button class="hdr-btn" onclick="triggerSync()">&#8634; Sync</button>
+    <button class="hdr-btn" title="Help">?</button>
+    <button class="hdr-btn" title="Settings">&#9881;</button>
+  </div>
+</header>
+
+<!-- ===== APP LAYOUT ===== -->
+<div class="app-layout">
+
+  <!-- LEFT SIDEBAR -->
+  <nav class="sidebar">
+    <button class="sidebar-new-btn" onclick="openCreateModal()">+ New Issue</button>
+
+    <div class="sidebar-group">
+      <div class="sidebar-item active" data-tab="dashboard" onclick="switchTab('dashboard')">
+        <span class="sidebar-icon">&#9632;</span> Dashboard
+      </div>
+      <div class="sidebar-item" data-tab="work-orders" onclick="switchTab('work-orders')">
+        <span class="sidebar-icon">&#9776;</span> Issue Hub
+        <span class="sidebar-badge" id="sidebarWoCount"></span>
+      </div>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Manage</div>
+      <div class="sidebar-item" data-tab="reporting" onclick="switchTab('reporting')">
+        <span class="sidebar-icon">&#128202;</span> Reporting
+      </div>
+      <div class="sidebar-item" data-tab="knowledge-base" onclick="switchTab('knowledge-base')">
+        <span class="sidebar-icon">&#128214;</span> Knowledge Base
+      </div>
+      <div class="sidebar-item" data-tab="media" onclick="switchTab('media')">
+        <span class="sidebar-icon">&#128247;</span> Media Gallery
+      </div>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Entities</div>
+      <div class="sidebar-item" data-tab="ent-users" onclick="switchTab('ent-users')">
+        <span class="sidebar-icon">&#128100;</span> Users <span class="sidebar-badge" id="sb-cnt-users"></span>
+      </div>
+      <div class="sidebar-item" data-tab="ent-sites" onclick="switchTab('ent-sites')">
+        <span class="sidebar-icon">&#127970;</span> Sites <span class="sidebar-badge" id="sb-cnt-sites"></span>
+      </div>
+      <div class="sidebar-item" data-tab="ent-groups" onclick="switchTab('ent-groups')">
+        <span class="sidebar-icon">&#128101;</span> Groups <span class="sidebar-badge" id="sb-cnt-groups"></span>
+      </div>
+      <div class="sidebar-item" data-tab="ent-assets" onclick="switchTab('ent-assets')">
+        <span class="sidebar-icon">&#128295;</span> Assets <span class="sidebar-badge" id="sb-cnt-assets"></span>
+      </div>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Integration</div>
+      <div class="sidebar-item" data-tab="api-log" onclick="switchTab('api-log')">
+        <span class="sidebar-icon">&#128225;</span> API Log
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+
+    <!-- ===== TAB: DASHBOARD ===== -->
+    <div id="tab-dashboard" class="tab-pane active">
+      <div class="toolbar">
+        <span class="toolbar-title">Dashboard</span>
+        <div class="toolbar-spacer"></div>
+        <button class="btn btn-sm btn-outline" onclick="renderDashboard()">&#8634; Refresh</button>
+      </div>
+      <div class="dashboard-grid" id="dashboardGrid">
+        <div class="dash-panel">
+          <div class="dash-panel-hdr"><span class="dash-panel-title">Open Issues</span></div>
+          <div class="dash-panel-body"><div class="dash-stat"><div class="dash-stat-num" id="dashOpen">0</div><div class="dash-stat-label">currently open</div></div></div>
+        </div>
+        <div class="dash-panel">
+          <div class="dash-panel-hdr"><span class="dash-panel-title">In Progress</span></div>
+          <div class="dash-panel-body"><div class="dash-stat"><div class="dash-stat-num" id="dashProgress" style="color:var(--orange)">0</div><div class="dash-stat-label">being worked on</div></div></div>
+        </div>
+        <div class="dash-panel">
+          <div class="dash-panel-hdr"><span class="dash-panel-title">Issues by Priority</span></div>
+          <div class="dash-panel-body" id="dashPriority"></div>
+        </div>
+        <div class="dash-panel">
+          <div class="dash-panel-hdr"><span class="dash-panel-title">Issues by Status</span></div>
+          <div class="dash-panel-body" id="dashStatus"></div>
+        </div>
+        <div class="dash-panel" style="grid-column: 1 / -1">
+          <div class="dash-panel-hdr"><span class="dash-panel-title">Recent Activity</span></div>
+          <div class="dash-panel-body" id="dashRecent"><div style="color:var(--text-faint);font-size:12px;text-align:center;padding:12px">Loading...</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TAB: WORK ORDERS (Issue Hub) ===== -->
+    <div id="tab-work-orders" class="tab-pane">
+      <div class="toolbar">
+        <span class="toolbar-title">Issue Hub</span>
+        <input type="search" id="searchInput" class="search-box" placeholder="Search issues..." oninput="applyFilters()">
+        <input type="text" id="filterStatus" class="filter-sel" placeholder="All Statuses" readonly>
+        <input type="text" id="filterPriority" class="filter-sel" placeholder="All Priorities" readonly>
+        <div class="toolbar-spacer"></div>
+        <span id="woCount" class="count-chip">-</span>
+        <button class="btn btn-sm btn-primary" onclick="openCreateModal()">+ New Issue</button>
+      </div>
+      <div class="split-view">
+        <div class="wo-list-pane" id="woListPane">
+          <div class="empty-state"><p>Loading work orders...</p></div>
+        </div>
+        <div class="resize-handle" id="resizeHandle"></div>
+        <div class="wo-detail-pane" id="woDetailPane">
+          <div class="wo-detail-scroll" style="justify-content:center">
+            <div class="detail-empty">
+              <div class="detail-empty-icon">&#128203;</div>
+              <div class="detail-empty-title">No issue selected</div>
+              <div class="detail-empty-sub">Select an issue from the list or create a new one</div>
+              <br>
+              <button class="btn btn-primary" style="padding:7px 16px;font-size:13px" onclick="openCreateModal()">+ New Issue</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TAB: REPORTING ===== -->
+    <div id="tab-reporting" class="tab-pane">
+      <div class="toolbar">
+        <span class="toolbar-title">Reporting</span>
+        <div class="toolbar-spacer"></div>
+        <button class="btn btn-sm btn-outline" onclick="renderReporting()">&#8634; Refresh</button>
+      </div>
+      <div class="report-grid" id="reportGrid">
+        <!-- KPI row -->
+        <div class="report-panel full-width">
+          <div class="report-panel-hdr"><span class="report-panel-title">Key Metrics</span></div>
+          <div class="report-panel-body">
+            <div class="report-kpi" id="reportKPIs"></div>
+          </div>
+        </div>
+        <!-- Status donut + Priority donut -->
+        <div class="report-panel">
+          <div class="report-panel-hdr"><span class="report-panel-title">Issues by Status</span></div>
+          <div class="report-panel-body" id="reportStatusDonut"></div>
+        </div>
+        <div class="report-panel">
+          <div class="report-panel-hdr"><span class="report-panel-title">Issues by Priority</span></div>
+          <div class="report-panel-body" id="reportPriorityDonut"></div>
+        </div>
+        <!-- SC sync breakdown -->
+        <div class="report-panel">
+          <div class="report-panel-hdr"><span class="report-panel-title">SafetyCulture Sync Coverage</span></div>
+          <div class="report-panel-body" id="reportSyncCoverage"></div>
+        </div>
+        <!-- Issues by Assignee -->
+        <div class="report-panel">
+          <div class="report-panel-hdr"><span class="report-panel-title">Issues by Assignee</span></div>
+          <div class="report-panel-body" id="reportAssignee"></div>
+        </div>
+        <!-- Creation timeline -->
+        <div class="report-panel full-width">
+          <div class="report-panel-hdr"><span class="report-panel-title">Issue Volume &mdash; Last 7 Days</span></div>
+          <div class="report-panel-body" id="reportTimeline"></div>
+        </div>
+        <!-- Issues by Location -->
+        <div class="report-panel">
+          <div class="report-panel-hdr"><span class="report-panel-title">Issues by Location</span></div>
+          <div class="report-panel-body" id="reportLocation"></div>
+        </div>
+        <!-- Overdue table -->
+        <div class="report-panel">
+          <div class="report-panel-hdr"><span class="report-panel-title">Overdue Issues</span></div>
+          <div class="report-panel-body" id="reportOverdue"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TAB: KNOWLEDGE BASE ===== -->
+    <div id="tab-knowledge-base" class="tab-pane">
+      <div class="toolbar">
+        <span class="toolbar-title">Knowledge Base</span>
+        <div class="toolbar-spacer"></div>
+        <input type="search" id="kbSearch" class="search-box" placeholder="Search articles..." oninput="filterKB()">
+      </div>
+      <div class="kb-layout">
+        <nav class="kb-sidebar" id="kbNav"></nav>
+        <div class="kb-content" id="kbContent"></div>
+      </div>
+    </div>
+
+
+    <!-- ===== TAB: ENTITY — USERS ===== -->
+    <div id="tab-ent-users" class="tab-pane">
+      <div class="obj-toolbar">
+        <span class="toolbar-title">Users</span>
+        <div class="toolbar-spacer"></div>
+        <span class="obj-sync-info" id="objSyncInfo-users">Reference data from SafetyCulture</span>
+        <button class="btn btn-sm btn-outline" onclick="syncObjects('users')">&#8634; Refresh from SC</button>
+      </div>
+      <div class="obj-pane">
+        <div class="obj-table-wrap"><table class="obj-table"><thead><tr><th>Name</th><th>Email</th><th>Status</th><th>ID</th></tr></thead><tbody id="tbl-users"><tr><td colspan="4" class="log-empty">Loading...</td></tr></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- ===== TAB: ENTITY — SITES ===== -->
+    <div id="tab-ent-sites" class="tab-pane">
+      <div class="obj-toolbar">
+        <span class="toolbar-title">Sites</span>
+        <div class="toolbar-spacer"></div>
+        <span class="obj-sync-info" id="objSyncInfo-sites">Reference data from SafetyCulture</span>
+        <button class="btn btn-sm btn-outline" onclick="syncObjects('sites')">&#8634; Refresh from SC</button>
+      </div>
+      <div class="obj-pane">
+        <div class="obj-table-wrap"><table class="obj-table"><thead><tr><th>Name</th><th>Parent Site</th><th>ID</th></tr></thead><tbody id="tbl-sites"><tr><td colspan="3" class="log-empty">Loading...</td></tr></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- ===== TAB: ENTITY — GROUPS ===== -->
+    <div id="tab-ent-groups" class="tab-pane">
+      <div class="obj-toolbar">
+        <span class="toolbar-title">Groups</span>
+        <div class="toolbar-spacer"></div>
+        <span class="obj-sync-info" id="objSyncInfo-groups">Reference data from SafetyCulture</span>
+        <button class="btn btn-sm btn-outline" onclick="syncObjects('groups')">&#8634; Refresh from SC</button>
+      </div>
+      <div class="obj-pane">
+        <div class="obj-table-wrap"><table class="obj-table"><thead><tr><th>Group Name</th><th>ID</th></tr></thead><tbody id="tbl-groups"><tr><td colspan="2" class="log-empty">Loading...</td></tr></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- ===== TAB: ENTITY — ASSETS ===== -->
+    <div id="tab-ent-assets" class="tab-pane">
+      <div class="obj-toolbar">
+        <span class="toolbar-title">Assets</span>
+        <div class="toolbar-spacer"></div>
+        <span class="obj-sync-info" id="objSyncInfo-assets">Reference data from SafetyCulture</span>
+        <button class="btn btn-sm btn-outline" onclick="syncObjects('assets')">&#8634; Refresh from SC</button>
+      </div>
+      <div class="obj-pane">
+        <div class="obj-table-wrap"><table class="obj-table"><thead><tr><th>Code</th><th>Type</th><th>Site</th><th>ID</th></tr></thead><tbody id="tbl-assets"><tr><td colspan="4" class="log-empty">Loading...</td></tr></tbody></table></div>
+      </div>
+    </div>
+
+
+    <!-- ===== TAB: MEDIA ===== -->
+    <div id="tab-media" class="tab-pane">
+      <div class="media-toolbar">
+        <span class="toolbar-title">Media Gallery</span>
+        <div class="toolbar-spacer"></div>
+        <span id="mediaCount" class="count-chip"></span>
+        <label class="btn btn-sm btn-primary" style="cursor:pointer">
+          Upload Media
+          <input type="file" id="mediaTabUploadInput" accept="image/*,video/*,application/pdf" style="display:none" onchange="handleGlobalMediaUpload(this)">
+        </label>
+        <button class="btn btn-sm btn-outline" onclick="loadAllMedia()">&#8634; Refresh</button>
+      </div>
+      <div class="media-pane" id="mediaGalleryPane">
+        <div class="empty-state"><p>Loading media...</p></div>
+      </div>
+    </div>
+
+    <!-- ===== TAB: API LOG ===== -->
+    <div id="tab-api-log" class="tab-pane">
+      <div class="toolbar">
+        <span class="toolbar-title">SafetyCulture &#8596; IssueTrak API Event Log</span>
+        <div class="toolbar-spacer"></div>
+        <button class="btn btn-sm btn-outline" onclick="fetchSyncLog()">&#8634; Refresh</button>
+      </div>
+      <div class="log-scroll">
+        <table class="log-table">
+          <thead><tr><th>Time</th><th>Direction</th><th>Event</th><th>Work Order</th><th>SC Action ID</th><th>Details</th><th>Status</th></tr></thead>
+          <tbody id="logBody"><tr><td colspan="7" class="log-empty">No API events recorded yet</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ===== CREATE MODAL ===== -->
+<div class="modal-backdrop" id="createModal" onclick="handleBackdropClick(event,'createModal')">
+  <div class="modal">
+    <div class="modal-hdr">
+      <h3>New Issue</h3>
+      <button class="modal-x" onclick="closeCreateModal()">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div class="fg">
+        <label>Subject <span class="req">*</span></label>
+        <input type="text" id="newTitle" placeholder="Describe the issue or task...">
+      </div>
+      <div class="fg">
+        <label>Description</label>
+        <textarea id="newDesc" rows="3" placeholder="Additional details, steps, or context..."></textarea>
+      </div>
+      <div class="fg-row">
+        <div class="fg">
+          <label>Status</label>
+          <input type="text" id="newStatus" value="Open" placeholder="Select status..." readonly>
+        </div>
+        <div class="fg">
+          <label>Priority</label>
+          <input type="text" id="newPriority" value="Medium" placeholder="Select priority..." readonly>
+        </div>
+      </div>
+      <div class="fg-row">
+        <div class="fg">
+          <label>Due Date</label>
+          <input type="date" id="newDue">
+        </div>
+        <div class="fg">
+          <label>Assignee</label>
+          <input type="text" id="newAssignee" placeholder="Select or type a name...">
+          <div class="fg-hint" id="newAssigneeHint"></div>
+        </div>
+      </div>
+      <div class="fg-row">
+        <div class="fg">
+          <label>Location / Site</label>
+          <input type="text" id="newLocation" placeholder="Select or type a site...">
+        </div>
+        <div class="fg">
+          <label>Asset</label>
+          <input type="text" id="newAsset" placeholder="Select or type an asset...">
+        </div>
+      </div>
+      <div class="modal-section-label">Additional Fields (Not Yet Mapped)</div>
+      <div class="fg-row">
+        <div class="fg">
+          <label>Issue Type</label>
+          <input type="text" id="newIssueType" placeholder="e.g. Maintenance, Safety..." disabled style="background:#f8fafb;color:var(--text-faint);font-style:italic">
+        </div>
+        <div class="fg">
+          <label>Organization</label>
+          <input type="text" id="newOrganization" placeholder="e.g. Facilities Dept" disabled style="background:#f8fafb;color:var(--text-faint);font-style:italic">
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeCreateModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitCreate()">Create Issue</button>
+    </div>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">&#10005;</button>
+  <img class="lightbox-img" id="lightboxImg" src="" alt="">
+  <div class="lightbox-label" id="lightboxLabel"></div>
+  <div class="lightbox-src" id="lightboxSrc"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+
+<script>
+// ===================== STATE =====================
+let workOrders   = [];
+let filteredWOs  = [];
+let selectedWOId = null;
+let selectedIds  = new Set();
+let liveMode     = false;
+let _debounce    = null;
+let scObjects    = { sites: [], users: [], groups: [], assets: [] };
+
+const SC_APP_BASE = 'https://app.safetyculture.com/tasks';
+
+// ===================== UTILS =====================
+function esc(s) {
+  if (s == null) return '';
+  const d = document.createElement('div');
+  d.textContent = String(s);
+  return d.innerHTML;
+}
+function fmtRelative(ts) {
+  if (!ts) return '\u2014';
+  const diff = Date.now() - new Date(ts);
+  if (diff < 60000)    return 'just now';
+  if (diff < 3600000)  return Math.floor(diff / 60000) + 'm ago';
+  if (diff < 86400000) return Math.floor(diff / 3600000) + 'h ago';
+  const d = new Date(ts);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+function fmtFull(ts) {
+  if (!ts) return '\u2014';
+  const d = new Date(ts);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' +
+         d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+}
+function fmtDateInput(ts) { return ts ? String(ts).slice(0, 10) : ''; }
+function fmtDateDisplay(ts) {
+  if (!ts) return '\u2014';
+  const d = new Date(ts + (ts.length === 10 ? 'T12:00:00' : ''));
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+function isOverdue(due, status) {
+  if (!due || status === 'Completed' || status === 'Cancelled') return false;
+  return new Date(due + (due.length === 10 ? 'T23:59:59' : '')) < new Date();
+}
+function statusClass(s)   { return 's-' + (s || '').toLowerCase().replace(/\s+/g, '-'); }
+function priorityClass(p) { return 'p-' + (p || 'none').toLowerCase(); }
+function badgeStatus(s)   { const m={'Open':'b-open','In Progress':'b-in-progress','Completed':'b-completed','Cancelled':'b-cancelled'}; return m[s]||'b-none'; }
+function badgePriority(p) { const m={'High':'b-high','Medium':'b-medium','Low':'b-low','None':'b-none'}; return m[p]||'b-none'; }
+function priItemClass(p)  { const m={'High':'pri-high','Medium':'pri-medium','Low':'pri-low','None':'pri-none'}; return m[p]||'pri-none'; }
+
+function showToast(msg, ms = 3000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), ms);
+}
+
+// ===================== TAB SWITCHING =====================
+function switchTab(name) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sidebar-item').forEach(t => t.classList.remove('active'));
+  const pane = document.getElementById('tab-' + name);
+  if (pane) pane.classList.add('active');
+  const item = document.querySelector(`.sidebar-item[data-tab="${name}"]`);
+  if (item) item.classList.add('active');
+  if (name === 'api-log') fetchSyncLog();
+  if (name.startsWith('ent-')) loadEntityTab(name.replace('ent-', ''));
+  if (name === 'media')   loadAllMedia();
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'knowledge-base') renderKB();
+  if (name === 'reporting') renderReporting();
+}
+
+function loadEntityTab(key) {
+  if (!scObjects.users.length && !scObjects.sites.length) {
+    fetchScObjects().then(() => renderEntityTable(key));
+  } else {
+    renderEntityTable(key);
+  }
+}
+
+function renderEntityTable(key) {
+  if (key === 'users') {
+    renderObjTable('users', scObjects.users, u => {
+      const name = [u.firstname, u.lastname].filter(Boolean).join(' ') || '\u2014';
+      return `<td><b>${esc(name)}</b></td><td>${esc(u.email)}</td><td><span class="badge ${u.active ? 'b-completed' : 'b-cancelled'}">${u.active ? 'Active' : 'Inactive'}</span></td><td style="font-family:monospace;font-size:10px;color:var(--text-faint)">${esc(u.id.slice(0,12))}\u2026</td>`;
+    });
+  } else if (key === 'sites') {
+    const siteMap = Object.fromEntries(scObjects.sites.map(s => [s.id, s.name]));
+    renderObjTable('sites', scObjects.sites, s => {
+      const parentName = s.parent_id ? (siteMap[s.parent_id] || s.parent_id) : '\u2014';
+      return `<td><b>${esc(s.name)}</b></td><td style="font-size:11px;color:var(--text-faint)">${esc(parentName)}</td><td style="font-family:monospace;font-size:10px;color:var(--text-faint)">${esc(s.id.slice(0,12))}\u2026</td>`;
+    });
+  } else if (key === 'groups') {
+    renderObjTable('groups', scObjects.groups, g =>
+      `<td><b>${esc(g.name)}</b></td><td style="font-family:monospace;font-size:10px;color:var(--text-faint)">${esc(g.id.slice(0,12))}\u2026</td>`
+    );
+  } else if (key === 'assets') {
+    renderObjTable('assets', scObjects.assets, a =>
+      `<td><b>${esc(a.code||'\u2014')}</b></td><td>${esc(a.type_name||'\u2014')}</td><td>${esc(a.site_name||'\u2014')}</td><td style="font-family:monospace;font-size:10px;color:var(--text-faint)">${esc(a.id.slice(0,12))}\u2026</td>`
+    );
+  }
+  updateEntityBadges();
+}
+
+// ===================== DETAIL TABS =====================
+function switchDetailTab(name) {
+  document.querySelectorAll('.detail-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.detail-tab-pane').forEach(p => p.classList.remove('active'));
+  const tab = document.querySelector(`.detail-tab[data-dtab="${name}"]`);
+  if (tab) tab.classList.add('active');
+  const pane = document.getElementById('dtab-' + name);
+  if (pane) pane.classList.add('active');
+}
+
+// ===================== DASHBOARD =====================
+function renderDashboard() {
+  const open   = workOrders.filter(w => w.status === 'Open').length;
+  const inProg = workOrders.filter(w => w.status === 'In Progress').length;
+  const comp   = workOrders.filter(w => w.status === 'Completed').length;
+  const canc   = workOrders.filter(w => w.status === 'Cancelled').length;
+  const total  = workOrders.length || 1;
+
+  document.getElementById('dashOpen').textContent = open;
+  document.getElementById('dashProgress').textContent = inProg;
+
+  const statusData = [
+    { label: 'Open', count: open, color: 'var(--blue)' },
+    { label: 'In Progress', count: inProg, color: 'var(--orange)' },
+    { label: 'Completed', count: comp, color: 'var(--green)' },
+    { label: 'Cancelled', count: canc, color: 'var(--red)' },
+  ];
+  document.getElementById('dashStatus').innerHTML = statusData.map(d =>
+    `<div class="dash-bar-row"><span class="dash-bar-label">${d.label}</span><div class="dash-bar-track"><div class="dash-bar-fill" style="width:${(d.count/total*100).toFixed(1)}%;background:${d.color}"></div></div><span class="dash-bar-count">${d.count}</span></div>`
+  ).join('');
+
+  const high = workOrders.filter(w => w.priority === 'High').length;
+  const med  = workOrders.filter(w => w.priority === 'Medium').length;
+  const low  = workOrders.filter(w => w.priority === 'Low').length;
+  const none = workOrders.filter(w => w.priority === 'None').length;
+  const priData = [
+    { label: 'High', count: high, color: 'var(--red)' },
+    { label: 'Medium', count: med, color: 'var(--orange)' },
+    { label: 'Low', count: low, color: 'var(--green)' },
+    { label: 'None', count: none, color: '#b0bec5' },
+  ];
+  document.getElementById('dashPriority').innerHTML = priData.map(d =>
+    `<div class="dash-bar-row"><span class="dash-bar-label">${d.label}</span><div class="dash-bar-track"><div class="dash-bar-fill" style="width:${(d.count/total*100).toFixed(1)}%;background:${d.color}"></div></div><span class="dash-bar-count">${d.count}</span></div>`
+  ).join('');
+
+  const recent = workOrders.slice(0, 6);
+  document.getElementById('dashRecent').innerHTML = recent.length
+    ? recent.map(w => `<div class="dash-recent-item"><span class="badge ${badgeStatus(w.status)}">${esc(w.status)}</span><span style="font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(w.title)}</span><span style="color:var(--text-faint);font-size:10px;flex-shrink:0">${fmtRelative(w.updated_at)}</span></div>`).join('')
+    : '<div style="color:var(--text-faint);font-size:12px;text-align:center;padding:12px">No issues yet</div>';
+
+  const badge = document.getElementById('sidebarWoCount');
+  if (badge) badge.textContent = workOrders.length || '';
+}
+
+// ===================== KNOWLEDGE BASE =====================
+const KB_ARTICLES = [
+  { cat: 'Getting Started', id: 'kb-overview', title: 'Platform Overview',
+    body: `<h1>Platform Overview</h1>
+<p class="kb-meta">Last updated: April 2026</p>
+<p>The Work Order Management System (WOMS) is a lightweight issue tracking platform that provides bidirectional synchronization with SafetyCulture (iAuditor). Issues created in either system are automatically mirrored, keeping field teams and back-office staff in sync.</p>
+
+<h2>Core Concepts</h2>
+<h3>Issues (Work Orders)</h3>
+<p>Issues are the central record type. Each issue has a title, description, status, priority, assignee, location, asset, and optional due date. Issues can originate in WOMS or be imported from SafetyCulture actions.</p>
+
+<h3>Bidirectional Sync</h3>
+<p>When live sync is enabled, WOMS polls the SafetyCulture feed for new or updated actions and mirrors changes back. Status and priority updates flow in both directions. Comments (notes) also sync between systems.</p>
+
+<h3>Entities</h3>
+<p>Entity data (Users, Sites, Groups, Assets) is pulled from SafetyCulture and used to populate dropdown fields and resolve IDs to human-readable names throughout the interface.</p>
+
+<div class="kb-callout"><strong>Tip:</strong> Use the sidebar Entities section to browse and refresh your SafetyCulture reference data at any time.</div>
+
+<h2>Navigation</h2>
+<ul>
+<li><strong>Dashboard</strong> &mdash; At-a-glance KPIs: open issues, in-progress count, status/priority breakdowns, and recent activity.</li>
+<li><strong>Issue Hub</strong> &mdash; Full list of issues with search, status/priority filters, and a detail panel for editing fields, adding notes, and managing attachments.</li>
+<li><strong>Reporting</strong> &mdash; Analytical dashboards showing sync coverage, assignee workload, overdue issues, and volume trends.</li>
+<li><strong>Knowledge Base</strong> &mdash; You are here. Reference articles for field mappings, troubleshooting, and platform usage.</li>
+<li><strong>Media Gallery</strong> &mdash; All uploaded photos, inspection images, and attachments across every issue.</li>
+<li><strong>Entities</strong> &mdash; Browse Users, Sites, Groups, and Assets synced from SafetyCulture.</li>
+<li><strong>API Log</strong> &mdash; Audit trail of every sync event between WOMS and SafetyCulture.</li>
+</ul>` },
+
+  { cat: 'Getting Started', id: 'kb-quickstart', title: 'Quick Start Guide',
+    body: `<h1>Quick Start Guide</h1>
+<p class="kb-meta">Last updated: April 2026</p>
+
+<h2>1. Create an Issue</h2>
+<p>Click the <strong>+ New Issue</strong> button in the sidebar or the Issue Hub toolbar. Fill in the title (required), and optionally set status, priority, assignee, location, asset, and due date. Click <strong>Create Issue</strong>.</p>
+
+<h2>2. Edit an Issue</h2>
+<p>Click any issue in the Issue Hub list to open its detail panel. Fields save automatically when you change them (auto-save on blur). The status and priority dropdowns take effect immediately.</p>
+
+<h2>3. Add Notes</h2>
+<p>Switch to the <strong>Notes</strong> tab in the detail panel. Type your note and press <strong>Ctrl+Enter</strong> or click the send button. Notes sync bidirectionally with SafetyCulture comments when the issue is linked.</p>
+
+<h2>4. Attach Media</h2>
+<p>Switch to the <strong>Attachments</strong> tab and click <strong>Upload Attachment</strong>. Supported formats include images, videos, and PDFs. You can also browse all media from the <strong>Media Gallery</strong> sidebar tab.</p>
+
+<h2>5. Monitor Sync</h2>
+<p>The sync pill in the header bar shows connection status. Green pulsing = live sync active. Check the <strong>API Log</strong> for detailed sync event history.</p>
+
+<div class="kb-callout"><strong>Keyboard shortcut:</strong> Press <code>Ctrl+Enter</code> in the notes field to send a comment quickly.</div>` },
+
+  { cat: 'SafetyCulture Integration', id: 'kb-sc-sync', title: 'How Sync Works',
+    body: `<h1>How SafetyCulture Sync Works</h1>
+<p class="kb-meta">Last updated: April 2026</p>
+
+<p>WOMS maintains a live connection to SafetyCulture via the Actions API and Feed API. This enables real-time mirroring of work orders between both platforms.</p>
+
+<h2>Sync Flow</h2>
+<ol>
+<li><strong>Inbound (SC &rarr; WOMS):</strong> The sync engine polls the SafetyCulture feed at a configurable interval. New actions are created as WOMS issues. Updated actions trigger field updates on existing linked issues.</li>
+<li><strong>Outbound (WOMS &rarr; SC):</strong> When a user edits a linked issue in WOMS (status, priority, assignee, title, description, due date), the change is pushed to SafetyCulture immediately via the Actions API.</li>
+<li><strong>Comments:</strong> Notes added in WOMS are posted as timeline comments on the linked SafetyCulture action. Comments from SafetyCulture appear as notes in WOMS.</li>
+<li><strong>Deletions:</strong> When an action is deleted in SafetyCulture, it is tracked in the <code>deleted_sc_actions</code> table and the linked WOMS issue is flagged.</li>
+</ol>
+
+<h2>Conflict Resolution</h2>
+<p>The most recent change wins. Each sync event records a timestamp, and the system uses <code>sc_last_synced</code> to determine whether an inbound update should overwrite local changes.</p>
+
+<div class="kb-callout warn"><strong>Important:</strong> If you edit a linked issue in both WOMS and SafetyCulture simultaneously, the last sync cycle determines which change persists. For critical updates, make changes in one system and wait for sync to complete.</div>
+
+<h2>Sync Modes</h2>
+<table class="kb-table">
+<tr><th>Mode</th><th>Behavior</th><th>Use Case</th></tr>
+<tr><td><strong>Live Sync</strong></td><td>Polls SC feed every N seconds (configurable)</td><td>Production use with active field teams</td></tr>
+<tr><td><strong>Demo Mode</strong></td><td>No automatic polling; manual refresh only</td><td>Testing, demos, or offline development</td></tr>
+</table>` },
+
+  { cat: 'SafetyCulture Integration', id: 'kb-field-mapping', title: 'Field Mapping Reference',
+    body: `<h1>Field Mapping Reference</h1>
+<p class="kb-meta">Last updated: April 2026</p>
+<p>This reference documents how fields map between WOMS (IssueTracker) and SafetyCulture.</p>
+
+<h2>Status Mapping</h2>
+<table class="kb-table">
+<tr><th>WOMS Status</th><th>SafetyCulture Status</th><th>SC Feed String</th></tr>
+<tr><td>Open</td><td>Todo</td><td>TODO / TO_DO</td></tr>
+<tr><td>In Progress</td><td>In Progress</td><td>IN_PROGRESS</td></tr>
+<tr><td>Completed</td><td>Done / Complete</td><td>DONE / COMPLETE</td></tr>
+<tr><td>Cancelled</td><td>Can't Do</td><td>CANT_DO / CAN'T DO</td></tr>
+</table>
+
+<h2>Priority Mapping</h2>
+<table class="kb-table">
+<tr><th>WOMS Priority</th><th>SafetyCulture Priority</th></tr>
+<tr><td>None</td><td>None</td></tr>
+<tr><td>Low</td><td>Low</td></tr>
+<tr><td>Medium</td><td>Medium</td></tr>
+<tr><td>High</td><td>High</td></tr>
+</table>
+
+<h2>Direct Field Mapping</h2>
+<table class="kb-table">
+<tr><th>WOMS Field</th><th>SC Action Field</th><th>Sync Direction</th></tr>
+<tr><td>Title</td><td>title / description</td><td>Bidirectional</td></tr>
+<tr><td>Description</td><td>description / note</td><td>Bidirectional</td></tr>
+<tr><td>Status</td><td>status (UUID)</td><td>Bidirectional</td></tr>
+<tr><td>Priority</td><td>priority (UUID)</td><td>Bidirectional</td></tr>
+<tr><td>Assignee</td><td>assignees[0]</td><td>Bidirectional</td></tr>
+<tr><td>Location</td><td>site_id</td><td>SC &rarr; WOMS</td></tr>
+<tr><td>Asset</td><td>asset_id</td><td>SC &rarr; WOMS</td></tr>
+<tr><td>Due Date</td><td>due_at</td><td>Bidirectional</td></tr>
+</table>
+
+<h2>Unmapped Fields (Future)</h2>
+<p>The following fields appear in the WOMS detail view but are not yet connected to SafetyCulture data:</p>
+<ul>
+<li><strong>Issue Type</strong> &mdash; Planned for mapping to SC template type</li>
+<li><strong>Substatus</strong> &mdash; Internal workflow tracking</li>
+<li><strong>Entered By</strong> &mdash; Planned for mapping to SC creator</li>
+<li><strong>Organization</strong> &mdash; Planned for mapping to SC organization</li>
+<li><strong>Next Action</strong> &mdash; Internal workflow routing</li>
+<li><strong>SLA Target</strong> &mdash; Planned for integration with due date calculations</li>
+</ul>` },
+
+  { cat: 'SafetyCulture Integration', id: 'kb-entities', title: 'Entity Data (Users, Sites, Groups, Assets)',
+    body: `<h1>Entity Data</h1>
+<p class="kb-meta">Last updated: April 2026</p>
+<p>Entity data provides the reference records used to populate picklist dropdowns and resolve IDs to human-readable names. All entity data originates from SafetyCulture.</p>
+
+<h2>Entity Types</h2>
+<table class="kb-table">
+<tr><th>Entity</th><th>Source API</th><th>Used For</th></tr>
+<tr><td>Users</td><td>/users/v1/organisations/users</td><td>Assignee picklist, comment author resolution</td></tr>
+<tr><td>Sites</td><td>/feed/v2/sites</td><td>Location picklist, location name resolution</td></tr>
+<tr><td>Groups</td><td>/groups/v1/</td><td>Future: group-based assignment rules</td></tr>
+<tr><td>Assets</td><td>/assets/v1/</td><td>Asset picklist, asset name resolution</td></tr>
+</table>
+
+<h2>Refreshing Entities</h2>
+<p>Navigate to any entity tab (Users, Sites, Groups, or Assets) in the sidebar and click <strong>Refresh from SC</strong>. This triggers a full re-sync of that entity type from the SafetyCulture API.</p>
+
+<div class="kb-callout"><strong>Note:</strong> Entity data is cached locally in the SQLite database. It does not auto-refresh with the live sync loop &mdash; you must manually trigger a refresh to pick up new users, sites, or assets added in SafetyCulture.</div>` },
+
+  { cat: 'Troubleshooting', id: 'kb-troubleshoot-sync', title: 'Sync Issues',
+    body: `<h1>Troubleshooting Sync Issues</h1>
+<p class="kb-meta">Last updated: April 2026</p>
+
+<h2>Sync indicator shows "Demo Mode"</h2>
+<p>This means live sync is disabled. The system is running without an active SafetyCulture API connection. Check that the <code>SC_API_TOKEN</code> environment variable is set and the application was started with sync enabled.</p>
+
+<h2>Changes not appearing in SafetyCulture</h2>
+<ol>
+<li>Verify the issue is linked (check for the blue "SC" badge in the issue list or the Linked Action box in the detail view).</li>
+<li>Check the <strong>API Log</strong> for recent outbound events and any error entries.</li>
+<li>Confirm the sync indicator is green (live mode).</li>
+</ol>
+
+<h2>Duplicate issues appearing</h2>
+<p>This can occur if the SafetyCulture feed cursor is reset. Check the API Log for duplicate inbound creation events. The system uses <code>sc_action_id</code> to prevent duplicates, but feed cursor issues can occasionally cause re-processing.</p>
+
+<h2>Comments not syncing</h2>
+<p>Comment sync requires the issue to be linked to a SafetyCulture action. Notes on issues created only in WOMS (no SC link) will not sync. Check the "IssueTrak-only notes" indicator in the Notes tab.</p>
+
+<div class="kb-callout danger"><strong>Error state:</strong> If the API Log shows repeated errors, the SafetyCulture API token may have expired or been revoked. Generate a new token in the SafetyCulture web portal under API Access.</div>` },
+
+  { cat: 'Troubleshooting', id: 'kb-troubleshoot-general', title: 'General Issues',
+    body: `<h1>Troubleshooting General Issues</h1>
+<p class="kb-meta">Last updated: April 2026</p>
+
+<h2>Page not loading or blank screen</h2>
+<p>Verify the backend server is running. The frontend makes API calls to <code>/api/work-orders</code>, <code>/api/status</code>, and other endpoints. Open the browser developer console (F12) to check for network errors.</p>
+
+<h2>Fields not saving</h2>
+<p>Fields auto-save when you click or tab away from them (on blur). Look for the save indicator in the top-right of the detail panel &mdash; it will show "Saving...", "Saved", or "Error". If it shows "Error", check the browser console for details.</p>
+
+<h2>Picklist dropdowns empty</h2>
+<p>Picklist data comes from SafetyCulture entities. Navigate to the relevant Entity tab (e.g., Users for the Assignee field) and click <strong>Refresh from SC</strong> to load the data.</p>
+
+<h2>Media upload fails</h2>
+<p>Supported formats: images (JPEG, PNG, GIF, WebP), videos (MP4, WebM), and PDFs. Maximum file size depends on your server configuration. Check the browser console for upload error details.</p>` },
+
+  { cat: 'API Reference', id: 'kb-api-endpoints', title: 'REST API Endpoints',
+    body: `<h1>REST API Endpoints</h1>
+<p class="kb-meta">Last updated: April 2026</p>
+<p>WOMS exposes the following REST API endpoints. All endpoints return JSON.</p>
+
+<h2>Work Orders</h2>
+<table class="kb-table">
+<tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+<tr><td><code>GET</code></td><td><code>/api/work-orders</code></td><td>List all work orders</td></tr>
+<tr><td><code>POST</code></td><td><code>/api/work-orders</code></td><td>Create a new work order</td></tr>
+<tr><td><code>PATCH</code></td><td><code>/api/work-orders/{id}</code></td><td>Update a work order field</td></tr>
+<tr><td><code>DELETE</code></td><td><code>/api/work-orders/{id}</code></td><td>Delete a work order</td></tr>
+</table>
+
+<h2>Comments</h2>
+<table class="kb-table">
+<tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+<tr><td><code>GET</code></td><td><code>/api/work-orders/{id}/comments</code></td><td>List comments for a work order</td></tr>
+<tr><td><code>POST</code></td><td><code>/api/work-orders/{id}/comments</code></td><td>Add a comment</td></tr>
+</table>
+
+<h2>Media</h2>
+<table class="kb-table">
+<tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+<tr><td><code>GET</code></td><td><code>/api/media</code></td><td>List all media (optional <code>?work_order_id=</code>)</td></tr>
+<tr><td><code>POST</code></td><td><code>/api/media</code></td><td>Upload media (multipart form)</td></tr>
+</table>
+
+<h2>SafetyCulture</h2>
+<table class="kb-table">
+<tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+<tr><td><code>GET</code></td><td><code>/api/sc/objects</code></td><td>Get cached SC entities</td></tr>
+<tr><td><code>POST</code></td><td><code>/api/sc/sync-objects</code></td><td>Force refresh SC entities</td></tr>
+<tr><td><code>GET</code></td><td><code>/api/sync-log</code></td><td>Get sync event log</td></tr>
+<tr><td><code>GET</code></td><td><code>/api/status</code></td><td>Get system status and sync config</td></tr>
+<tr><td><code>GET</code></td><td><code>/api/events</code></td><td>SSE stream for real-time updates</td></tr>
+</table>
+
+<div class="kb-callout"><strong>SSE Stream:</strong> The <code>/api/events</code> endpoint provides Server-Sent Events for live updates. Events include <code>wo_updated</code>, <code>wo_created</code>, <code>wo_deleted</code>, and <code>comment_added</code>.</div>` },
+];
+
+let _kbRendered = false;
+let _kbActiveId = null;
+
+function renderKB() {
+  if (_kbRendered) return;
+  _kbRendered = true;
+  const nav = document.getElementById('kbNav');
+  const cats = [...new Set(KB_ARTICLES.map(a => a.cat))];
+  nav.innerHTML = cats.map(cat =>
+    `<div class="kb-cat-label">${esc(cat)}</div>` +
+    KB_ARTICLES.filter(a => a.cat === cat).map(a =>
+      `<a class="kb-article-link" data-kb="${a.id}" onclick="showKBArticle('${a.id}')">${esc(a.title)}</a>`
+    ).join('')
+  ).join('');
+  showKBArticle(KB_ARTICLES[0].id);
+}
+
+function showKBArticle(id) {
+  _kbActiveId = id;
+  const art = KB_ARTICLES.find(a => a.id === id);
+  if (!art) return;
+  document.getElementById('kbContent').innerHTML = `<div class="kb-article">${art.body}</div>`;
+  document.querySelectorAll('.kb-article-link').forEach(l => {
+    l.classList.toggle('active', l.dataset.kb === id);
+  });
+}
+
+function filterKB() {
+  const q = (document.getElementById('kbSearch').value || '').toLowerCase();
+  document.querySelectorAll('.kb-article-link').forEach(link => {
+    const art = KB_ARTICLES.find(a => a.id === link.dataset.kb);
+    if (!art) return;
+    const match = !q || art.title.toLowerCase().includes(q) || art.body.toLowerCase().includes(q);
+    link.style.display = match ? '' : 'none';
+  });
+}
+
+// ===================== REPORTING =====================
+function renderReporting() {
+  const wos = workOrders;
+  const total = wos.length || 1;
+  const open = wos.filter(w => w.status === 'Open').length;
+  const inProg = wos.filter(w => w.status === 'In Progress').length;
+  const comp = wos.filter(w => w.status === 'Completed').length;
+  const canc = wos.filter(w => w.status === 'Cancelled').length;
+  const linked = wos.filter(w => !!w.sc_action_id).length;
+  const unlinked = wos.length - linked;
+  const now = new Date();
+  const overdue = wos.filter(w => w.due_date && new Date(w.due_date) < now && w.status !== 'Completed' && w.status !== 'Cancelled');
+  const closedPct = wos.length ? ((comp + canc) / wos.length * 100).toFixed(0) : 0;
+
+  // KPIs
+  document.getElementById('reportKPIs').innerHTML = `
+    <div class="report-kpi-item"><div class="report-kpi-num" style="color:var(--blue)">${wos.length}</div><div class="report-kpi-label">Total Issues</div></div>
+    <div class="report-kpi-item"><div class="report-kpi-num" style="color:var(--orange)">${open + inProg}</div><div class="report-kpi-label">Active (Open + In Progress)</div></div>
+    <div class="report-kpi-item"><div class="report-kpi-num" style="color:var(--green)">${closedPct}%</div><div class="report-kpi-label">Resolution Rate</div></div>
+    <div class="report-kpi-item"><div class="report-kpi-num" style="color:var(--red)">${overdue.length}</div><div class="report-kpi-label">Overdue</div></div>
+    <div class="report-kpi-item"><div class="report-kpi-num" style="color:var(--blue)">${linked}</div><div class="report-kpi-label">Linked to SC</div></div>
+  `;
+
+  // Status donut
+  const statusData = [
+    { label: 'Open', count: open, color: 'var(--blue)' },
+    { label: 'In Progress', count: inProg, color: 'var(--orange)' },
+    { label: 'Completed', count: comp, color: 'var(--green)' },
+    { label: 'Cancelled', count: canc, color: 'var(--red)' },
+  ];
+  document.getElementById('reportStatusDonut').innerHTML = renderDonut(statusData, wos.length);
+
+  // Priority donut
+  const high = wos.filter(w => w.priority === 'High').length;
+  const med  = wos.filter(w => w.priority === 'Medium').length;
+  const low  = wos.filter(w => w.priority === 'Low').length;
+  const none = wos.filter(w => w.priority === 'None').length;
+  const priData = [
+    { label: 'High', count: high, color: 'var(--red)' },
+    { label: 'Medium', count: med, color: 'var(--orange)' },
+    { label: 'Low', count: low, color: 'var(--green)' },
+    { label: 'None', count: none, color: '#b0bec5' },
+  ];
+  document.getElementById('reportPriorityDonut').innerHTML = renderDonut(priData, wos.length);
+
+  // SC Sync coverage
+  const syncPct = wos.length ? (linked / wos.length * 100) : 0;
+  document.getElementById('reportSyncCoverage').innerHTML = `
+    <div style="margin-bottom:10px">
+      <div class="report-hbar">
+        <div class="report-hbar-seg" style="width:${syncPct.toFixed(1)}%;background:var(--blue)"></div>
+        <div class="report-hbar-seg" style="width:${(100-syncPct).toFixed(1)}%;background:#d0dae6"></div>
+      </div>
+      <div class="report-legend">
+        <div class="report-legend-item"><div class="report-legend-dot" style="background:var(--blue)"></div>Linked to SC (${linked})</div>
+        <div class="report-legend-item"><div class="report-legend-dot" style="background:#d0dae6"></div>WOMS Only (${unlinked})</div>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--text-muted);line-height:1.6">
+      <strong>${syncPct.toFixed(0)}%</strong> of issues are linked to SafetyCulture actions.
+      ${unlinked > 0 ? `<br>${unlinked} issue${unlinked > 1 ? 's were' : ' was'} created directly in WOMS without a SafetyCulture link.` : ' All issues are synced.'}
+    </div>`;
+
+  // Assignee breakdown
+  const assigneeCounts = {};
+  wos.forEach(w => {
+    const a = w.assignee || 'Unassigned';
+    const name = resolveUserName(a);
+    assigneeCounts[name] = (assigneeCounts[name] || 0) + 1;
+  });
+  const assigneeSorted = Object.entries(assigneeCounts).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const maxAssignee = assigneeSorted.length ? assigneeSorted[0][1] : 1;
+  document.getElementById('reportAssignee').innerHTML = `<div class="report-timeline">${assigneeSorted.map(([name, count]) =>
+    `<div class="report-tl-row"><div class="report-tl-label" style="min-width:80px;text-align:left;font-size:11px;font-weight:500;color:var(--text)">${esc(name)}</div><div class="report-tl-bar"><div class="report-tl-fill" style="width:${(count/maxAssignee*100).toFixed(0)}%;background:var(--blue)">${count}</div></div></div>`
+  ).join('')}</div>`;
+
+  // Timeline — last 7 days
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    days.push({ date: d, label: d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) });
+  }
+  const dayMax = Math.max(1, ...days.map(d => wos.filter(w => {
+    const c = new Date(w.created_at); return c.toDateString() === d.date.toDateString();
+  }).length));
+  document.getElementById('reportTimeline').innerHTML = `<div class="report-timeline">${days.map(d => {
+    const count = wos.filter(w => { const c = new Date(w.created_at); return c.toDateString() === d.date.toDateString(); }).length;
+    return `<div class="report-tl-row"><div class="report-tl-label" style="min-width:90px">${d.label}</div><div class="report-tl-bar"><div class="report-tl-fill" style="width:${(count/dayMax*100).toFixed(0)}%;background:var(--blue)">${count || ''}</div></div><div class="report-tl-val">${count}</div></div>`;
+  }).join('')}</div>`;
+
+  // Location breakdown
+  const locCounts = {};
+  wos.forEach(w => {
+    const loc = resolveSiteName(w.location || '') || 'No Location';
+    locCounts[loc] = (locCounts[loc] || 0) + 1;
+  });
+  const locSorted = Object.entries(locCounts).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const maxLoc = locSorted.length ? locSorted[0][1] : 1;
+  document.getElementById('reportLocation').innerHTML = `<div class="report-timeline">${locSorted.map(([name, count]) =>
+    `<div class="report-tl-row"><div class="report-tl-label" style="min-width:80px;text-align:left;font-size:11px;font-weight:500;color:var(--text)">${esc(name)}</div><div class="report-tl-bar"><div class="report-tl-fill" style="width:${(count/maxLoc*100).toFixed(0)}%;background:var(--orange)">${count}</div></div></div>`
+  ).join('')}</div>`;
+
+  // Overdue table
+  if (overdue.length === 0) {
+    document.getElementById('reportOverdue').innerHTML = '<div style="text-align:center;color:var(--text-faint);font-size:12px;padding:14px">No overdue issues</div>';
+  } else {
+    document.getElementById('reportOverdue').innerHTML = `
+      <table class="report-table"><thead><tr><th>Issue</th><th>Due</th><th>Status</th><th>Priority</th></tr></thead><tbody>${overdue.slice(0, 10).map(w => {
+        const daysOver = Math.ceil((now - new Date(w.due_date)) / 86400000);
+        return `<tr><td style="font-weight:600">${esc(w.wo_number)}</td><td style="color:var(--red-text);font-weight:600">${daysOver}d overdue</td><td><span class="badge ${badgeStatus(w.status)}">${esc(w.status)}</span></td><td><span class="badge ${badgePriority(w.priority)}">${esc(w.priority)}</span></td></tr>`;
+      }).join('')}</tbody></table>`;
+  }
+}
+
+function resolveUserName(val) {
+  if (!val || val === 'Unassigned') return 'Unassigned';
+  const user = scObjects.users.find(u => u.id === val);
+  if (user) return [user.firstname, user.lastname].filter(Boolean).join(' ') || val;
+  return val;
+}
+
+function renderDonut(data, total) {
+  if (!total) return '<div style="text-align:center;color:var(--text-faint);font-size:12px;padding:14px">No data</div>';
+  const r = 50, cx = 60, cy = 60, sw = 14;
+  const circ = 2 * Math.PI * r;
+  let offset = 0;
+  const segs = data.filter(d => d.count > 0).map(d => {
+    const pct = d.count / total;
+    const dash = circ * pct;
+    const gap = circ - dash;
+    const seg = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${d.color}" stroke-width="${sw}" stroke-dasharray="${dash.toFixed(2)} ${gap.toFixed(2)}" stroke-dashoffset="${(-offset).toFixed(2)}" />`;
+    offset += dash;
+    return seg;
+  });
+  const legend = data.map(d =>
+    `<div class="report-legend-item"><div class="report-legend-dot" style="background:${d.color}"></div>${d.label}: ${d.count}</div>`
+  ).join('');
+  return `<div class="report-donut-wrap"><div class="report-donut"><svg viewBox="0 0 120 120">${segs.join('')}</svg><div class="report-donut-center"><div class="report-donut-num">${total}</div><div class="report-donut-label">total</div></div></div><div class="report-legend" style="flex-direction:column">${legend}</div></div>`;
+}
+
+// ===================== DATA FETCHING =====================
+async function init() {
+  fetchStatus();
+  await Promise.all([fetchWorkOrders(), fetchScObjects()]);
+  if (!_globalPicks) initGlobalPicklists();
+  connectSSE();
+  renderDashboard();
+  setInterval(fetchWorkOrders, 30000);
+}
+
+async function fetchStatus() {
+  try {
+    const r = await fetch('/api/status');
+    const d = await r.json();
+    liveMode = d.live_sync;
+    document.getElementById('syncDot').className = liveMode ? 'sync-dot' : 'sync-dot offline';
+    document.getElementById('syncStatus').textContent = liveMode
+      ? `Live (${d.sync_interval}s)` : 'Demo Mode';
+  } catch (e) {}
+}
+
+async function fetchWorkOrders() {
+  try {
+    const r = await fetch('/api/work-orders');
+    const d = await r.json();
+    workOrders = d.work_orders || [];
+    applyFilters();
+    if (selectedWOId) {
+      const wo = workOrders.find(w => w.id === selectedWOId);
+      if (wo) refreshDetailControls(wo);
+    }
+    // Update sidebar badge
+    const badge = document.getElementById('sidebarWoCount');
+    if (badge) badge.textContent = workOrders.length || '';
+    // Refresh dashboard if visible
+    if (document.getElementById('tab-dashboard')?.classList.contains('active')) renderDashboard();
+  } catch (e) { console.warn(e); }
+}
+
+async function fetchSyncLog() {
+  try {
+    const r = await fetch('/api/sync-log?limit=200');
+    const d = await r.json();
+    renderLogTable(d.logs || []);
+  } catch (e) {}
+}
+
+// ===================== SC OBJECTS =====================
+async function fetchScObjects() {
+  try {
+    const r = await fetch('/api/sc/objects');
+    scObjects = await r.json();
+    populateDataLists();
+    updateEntityBadges();
+  } catch (e) { console.warn('SC objects fetch failed', e); }
+}
+
+async function syncObjects(key) {
+  const infoEl = document.getElementById('objSyncInfo-' + key);
+  if (infoEl) infoEl.textContent = 'Syncing\u2026';
+  try {
+    const r = await fetch('/api/sc/sync-objects', { method: 'POST' });
+    const d = await r.json();
+    await fetchScObjects();
+    renderEntityTable(key);
+    updateEntityBadges();
+    const res = d.results || {};
+    if (infoEl) infoEl.textContent = `Synced ${res[key]||0} ${key}`;
+    showToast('SC ' + key + ' refreshed');
+  } catch (e) {
+    if (infoEl) infoEl.textContent = 'Sync failed';
+    showToast('Failed to sync SC ' + key);
+  }
+}
+
+function updateEntityBadges() {
+  ['users','sites','groups','assets'].forEach(k => {
+    const el = document.getElementById('sb-cnt-' + k);
+    if (el) el.textContent = scObjects[k].length || '';
+  });
+}
+
+// ===================== PICKLIST ENGINE =====================
+class Picklist {
+  constructor(input, options) {
+    this.input = input;
+    this.options = options;
+    this.filtered = [];
+    this.hlIdx = -1;
+    this.onSelect = null;
+    this._savedVal = input.value;
+    const wrap = document.createElement('div');
+    wrap.className = 'pick-wrap';
+    input.parentNode.insertBefore(wrap, input);
+    wrap.appendChild(input);
+    this.wrap = wrap;
+    const caret = document.createElement('span');
+    caret.className = 'pick-caret';
+    caret.textContent = '\u25BE';
+    wrap.appendChild(caret);
+    const dd = document.createElement('div');
+    dd.className = 'pick-dd';
+    wrap.appendChild(dd);
+    this.dd = dd;
+    input.removeAttribute('list');
+    input.removeAttribute('onblur');
+    input.setAttribute('autocomplete', 'off');
+    input.addEventListener('focus', () => this.open());
+    input.addEventListener('input', () => { this.filter(); this.openIfClosed(); });
+    input.addEventListener('blur', () => {
+      setTimeout(() => this.close(), 160);
+      if (this.onSelect && this.input.value !== this._savedVal) {
+        this._savedVal = this.input.value;
+        this.onSelect({ value: this.input.value, label: this.input.value });
+      }
+    });
+    input.addEventListener('keydown', e => this.onKey(e));
+  }
+  openIfClosed() { if (!this.dd.classList.contains('open')) this.open(); }
+  open() {
+    this.filtered = [...this.options]; this.hlIdx = -1;
+    this.render(''); this.dd.classList.add('open'); this.wrap.classList.add('open');
+  }
+  close() { this.dd.classList.remove('open'); this.wrap.classList.remove('open'); this.hlIdx = -1; }
+  filter() {
+    const q = this.input.value.toLowerCase().trim();
+    this.filtered = q ? this.options.filter(o => o.label.toLowerCase().includes(q) || (o.sub || '').toLowerCase().includes(q)) : [...this.options];
+    this.hlIdx = -1; this.render(q);
+  }
+  highlight(text, q) {
+    if (!q) return esc(text);
+    const i = text.toLowerCase().indexOf(q.toLowerCase());
+    if (i < 0) return esc(text);
+    return esc(text.slice(0, i)) + '<mark>' + esc(text.slice(i, i + q.length)) + '</mark>' + esc(text.slice(i + q.length));
+  }
+  render(q) {
+    if (!this.filtered.length) { this.dd.innerHTML = '<div class="pick-empty">No matches</div>'; return; }
+    this.dd.innerHTML = this.filtered.map((o, i) => {
+      const hl = i === this.hlIdx ? ' hl' : '';
+      const sub = o.sub ? `<span class="pick-opt-sub">${this.highlight(o.sub, q||'')}</span>` : '';
+      return `<div class="pick-opt${hl}" data-idx="${i}"><span class="pick-opt-label">${this.highlight(o.label, q||'')}</span>${sub}</div>`;
+    }).join('');
+    this.dd.querySelectorAll('.pick-opt').forEach(el => {
+      el.addEventListener('mousedown', e => { e.preventDefault(); this.select(parseInt(el.dataset.idx)); });
+    });
+  }
+  select(idx) {
+    const opt = this.filtered[idx]; if (!opt) return;
+    this.input.value = opt.value; this._savedVal = opt.value;
+    this.dd.classList.remove('open'); this.wrap.classList.remove('open'); this.hlIdx = -1;
+    if (this.onSelect) this.onSelect(opt); this.input.blur();
+  }
+  onKey(e) {
+    const isOpen = this.dd.classList.contains('open');
+    if (!isOpen) { if (e.key === 'ArrowDown') { this.open(); e.preventDefault(); } return; }
+    if (e.key === 'ArrowDown') { e.preventDefault(); this.hlIdx = Math.min(this.hlIdx + 1, this.filtered.length - 1); this.render(this.input.value.trim()); this.scrollHl(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); this.hlIdx = Math.max(this.hlIdx - 1, 0); this.render(this.input.value.trim()); this.scrollHl(); }
+    else if (e.key === 'Enter' && this.hlIdx >= 0) { e.preventDefault(); this.select(this.hlIdx); }
+    else if (e.key === 'Escape') { this.close(); }
+  }
+  scrollHl() { const el = this.dd.querySelector('.hl'); if (el) el.scrollIntoView({ block: 'nearest' }); }
+  updateOptions(opts) { this.options = opts; }
+}
+
+function buildUserOpts() {
+  return scObjects.users.map(u => {
+    const name = [u.firstname, u.lastname].filter(Boolean).join(' ') || u.email;
+    return { value: name, label: name, sub: u.email || '' };
+  });
+}
+function buildSiteOpts() { return scObjects.sites.map(s => ({ value: s.name, label: s.name })); }
+function buildAssetOpts() {
+  return scObjects.assets.map(a => ({
+    value: a.code || a.id, label: a.code || a.type_name || a.id,
+    sub: a.site_name ? `Site: ${a.site_name}` : (a.type_name || ''),
+  }));
+}
+
+let _globalPicks = null;
+function initGlobalPicklists() {
+  const uOpts = buildUserOpts(), sOpts = buildSiteOpts(), aOpts = buildAssetOpts();
+  if (!_globalPicks) {
+    const filterStatusOpts = [{value:'',label:'All Statuses'},...STATUS_OPTS];
+    const filterPriorityOpts = [{value:'',label:'All Priorities'},...PRIORITY_OPTS];
+    const pFS = new Picklist(document.getElementById('filterStatus'), filterStatusOpts);
+    pFS.onSelect = () => applyFilters();
+    const pFP = new Picklist(document.getElementById('filterPriority'), filterPriorityOpts);
+    pFP.onSelect = () => applyFilters();
+    const pMS = new Picklist(document.getElementById('newStatus'), STATUS_OPTS);
+    const pMP = new Picklist(document.getElementById('newPriority'), PRIORITY_OPTS);
+    const pMA = new Picklist(document.getElementById('newAssignee'), uOpts);
+    const pML = new Picklist(document.getElementById('newLocation'), sOpts);
+    const pMAs = new Picklist(document.getElementById('newAsset'), aOpts);
+    _globalPicks = { pFS, pFP, pMS, pMP, pMA, pML, pMAs };
+  } else {
+    _globalPicks.pMA.updateOptions(uOpts);
+    _globalPicks.pML.updateOptions(sOpts);
+    _globalPicks.pMAs.updateOptions(aOpts);
+  }
+}
+
+const STATUS_OPTS  = ['Open','In Progress','Completed','Cancelled'].map(s => ({ value: s, label: s }));
+const PRIORITY_OPTS = ['None','Low','Medium','High'].map(p => ({ value: p, label: p }));
+
+function initDetailPicklists(woId) {
+  const pS = new Picklist(document.getElementById('detailStatus'), STATUS_OPTS);
+  pS.onSelect = (opt) => {
+    const el = document.getElementById('detailStatus');
+    el.className = `ctrl-select ${statusClass(opt.value)}`;
+    saveField(woId, 'status', opt.value);
+  };
+  const pP = new Picklist(document.getElementById('detailPriority'), PRIORITY_OPTS);
+  pP.onSelect = (opt) => {
+    const el = document.getElementById('detailPriority');
+    el.className = `ctrl-select ${priorityClass(opt.value)}`;
+    saveField(woId, 'priority', opt.value);
+  };
+  const pA = new Picklist(document.getElementById('detailAssignee'), buildUserOpts());
+  pA.onSelect = (opt) => saveField(woId, 'assignee', opt.value);
+  const pL = new Picklist(document.getElementById('detailLocation'), buildSiteOpts());
+  pL.onSelect = (opt) => saveField(woId, 'location', opt.value);
+  const pAs = new Picklist(document.getElementById('detailAsset'), buildAssetOpts());
+  pAs.onSelect = (opt) => saveField(woId, 'asset', opt.value);
+}
+
+function populateDataLists() { initGlobalPicklists(); }
+
+function renderObjectsAll() {
+  ['users','sites','groups','assets'].forEach(k => renderEntityTable(k));
+  updateEntityBadges();
+}
+
+function renderObjTable(key, items, rowFn, cntId) {
+  const tbody = document.getElementById('tbl-' + key);
+  const cnt = document.getElementById(cntId);
+  if (cnt) cnt.textContent = items.length ? `(${items.length})` : '';
+  if (!tbody) return;
+  if (!items.length) {
+    const cols = { users: 4, sites: 3, groups: 2, assets: 4 }[key] || 4;
+    tbody.innerHTML = `<tr><td colspan="${cols}" class="log-empty">No ${key} found. Click "Refresh from SC" to load.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = items.map(item => `<tr>${rowFn(item)}</tr>`).join('');
+}
+
+// ===================== FILTERING =====================
+function applyFilters() {
+  const q  = (document.getElementById('searchInput').value || '').toLowerCase();
+  const st = document.getElementById('filterStatus').value;
+  const pr = document.getElementById('filterPriority').value;
+  filteredWOs = workOrders.filter(w => {
+    if (q && !w.title.toLowerCase().includes(q) && !w.wo_number.toLowerCase().includes(q) && !(w.description || '').toLowerCase().includes(q)) return false;
+    if (st && w.status !== st) return false;
+    if (pr && w.priority !== pr) return false;
+    return true;
+  });
+  renderWOList();
+  document.getElementById('woCount').textContent =
+    filteredWOs.length === workOrders.length ? `${workOrders.length} issues` : `${filteredWOs.length} of ${workOrders.length}`;
+}
+
+// ===================== WO LIST =====================
+function renderWOList() {
+  const el = document.getElementById('woListPane');
+  const oldFooter = el.querySelector('.selection-footer');
+  if (oldFooter) oldFooter.remove();
+  if (!filteredWOs.length) {
+    el.innerHTML = `<div class="empty-state"><p>${workOrders.length ? 'No issues match your filters.' : 'No issues yet. Create one to get started.'}</p></div>`;
+    return;
+  }
+  const listHtml = filteredWOs.map(w => {
+    const active   = w.id === selectedWOId ? 'active' : '';
+    const checked  = selectedIds.has(w.id) ? 'checked' : '';
+    const selClass = selectedIds.has(w.id) ? 'selected' : '';
+    const due      = fmtDateInput(w.due_date);
+    const od       = isOverdue(due, w.status);
+    return `<div class="wo-item ${active} ${selClass} ${priItemClass(w.priority)}" onclick="selectWO(${w.id})">
+      <div class="wo-item-row">
+        <input type="checkbox" class="wo-check" ${checked}
+          onclick="event.stopPropagation(); toggleSelect(${w.id})" data-woid="${w.id}">
+        <div class="wo-item-body">
+          <div class="wo-indicators">
+            ${w.sc_action_id ? '<span class="wo-ind wo-ind-sc" title="Linked to SafetyCulture">SC</span>' : ''}
+          </div>
+          <div class="wo-item-top">
+            <span class="wo-number">${esc(w.wo_number)}</span>
+            <span class="badge ${badgeStatus(w.status)}">${esc(w.status)}</span>
+          </div>
+          <div class="wo-title">${esc(w.title)}</div>
+          <div class="wo-meta">
+            <span class="badge ${badgePriority(w.priority)}">${esc(w.priority)}</span>
+            ${w.assignee ? `<span style="font-size:10px;color:var(--text-muted)">${esc(w.assignee)}</span>` : ''}
+            ${due ? `<span class="due-chip ${od?'overdue':''}">${fmtDateDisplay(due)}${od?' !':''}</span>` : ''}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  el.innerHTML = listHtml;
+  renderSelectionFooter();
+}
+
+function toggleSelect(id) { if (selectedIds.has(id)) selectedIds.delete(id); else selectedIds.add(id); renderWOList(); }
+function clearSelection() { selectedIds.clear(); renderWOList(); }
+function selectAllVisible() { filteredWOs.forEach(w => selectedIds.add(w.id)); renderWOList(); }
+
+function renderSelectionFooter() {
+  const el = document.getElementById('woListPane');
+  const old = el.querySelector('.selection-footer');
+  if (old) old.remove();
+  if (!selectedIds.size) return;
+  const footer = document.createElement('div');
+  footer.className = 'selection-footer';
+  footer.innerHTML = `
+    <div class="sel-count">
+      <span>${selectedIds.size} selected</span>
+      <button class="btn-sel-clear" onclick="event.stopPropagation(); selectAllVisible()">Select all</button>
+      <button class="btn-sel-clear" onclick="event.stopPropagation(); clearSelection()">Clear</button>
+    </div>
+    <div class="sel-actions">
+      <button class="btn-sel-delete" onclick="event.stopPropagation(); bulkDelete()">Delete ${selectedIds.size}</button>
+    </div>`;
+  el.appendChild(footer);
+}
+
+async function bulkDelete() {
+  const count = selectedIds.size;
+  const scCount = workOrders.filter(w => selectedIds.has(w.id) && w.sc_action_id).length;
+  const msg = scCount
+    ? `Delete ${count} issue${count>1?'s':''}? ${scCount} will also be deleted from SafetyCulture. This cannot be undone.`
+    : `Delete ${count} issue${count>1?'s':''}? This cannot be undone.`;
+  if (!confirm(msg)) return;
+  try {
+    const r = await fetch('/api/work-orders/bulk-delete', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: [...selectedIds] }),
+    });
+    if (!r.ok) throw new Error(await r.text());
+    const data = await r.json();
+    selectedIds.clear(); selectedWOId = null;
+    await fetchWorkOrders();
+    document.getElementById('woDetailPane').innerHTML = `
+      <div class="wo-detail-scroll" style="justify-content:center">
+        <div class="detail-empty">
+          <div class="detail-empty-icon">&#128203;</div>
+          <div class="detail-empty-title">No issue selected</div>
+          <div class="detail-empty-sub">Select an issue from the list or create a new one</div>
+          <br><button class="btn btn-primary" style="padding:7px 16px;font-size:13px" onclick="openCreateModal()">+ New Issue</button>
+        </div>
+      </div>`;
+    showToast(`Deleted ${data.deleted.length} issue${data.deleted.length>1?'s':''}`);
+  } catch (e) { showToast('Failed to delete'); console.error(e); }
+}
+
+// ===================== SELECT WO =====================
+function selectWO(id) {
+  selectedWOId = id;
+  renderWOList();
+  const wo = workOrders.find(w => w.id === id);
+  if (wo) renderDetail(wo);
+}
+
+function resolveSiteName(val) {
+  if (!val) return '';
+  const site = scObjects.sites.find(s => s.id === val);
+  if (site) return site.name;
+  if (val.startsWith('location_')) {
+    const stripped = val.replace('location_', '');
+    const site2 = scObjects.sites.find(s => s.id === stripped);
+    if (site2) return site2.name;
+  }
+  return val;
+}
+
+// ===================== DETAIL PANEL =====================
+async function renderDetail(wo) {
+  const pane = document.getElementById('woDetailPane');
+  const dueVal = fmtDateInput(wo.due_date);
+  const linked = !!wo.sc_action_id;
+  const scUrl  = linked ? `${SC_APP_BASE}/${wo.sc_action_id}` : null;
+  const locationDisplay = resolveSiteName(wo.location || '');
+  const meta = (() => { try { return JSON.parse(wo.metadata || '{}'); } catch { return {}; } })();
+  const inspectionId     = meta.inspection_id || '';
+  const inspectionName   = meta.inspection_name || '';
+  const inspectionItemId = meta.inspection_item_id || '';
+  const inspectionItemName = meta.inspection_item_name || '';
+  const auditUrlId = inspectionId ? 'audit_' + inspectionId.replace(/-/g, '') : '';
+  const inspectionItemUrl  = auditUrlId && inspectionItemId
+    ? `https://app.safetyculture.com/inspection/${auditUrlId}?item=${encodeURIComponent(inspectionItemId)}`
+    : auditUrlId ? `https://app.safetyculture.com/inspection/${auditUrlId}` : null;
+  const inspectionReportUrl = auditUrlId ? `https://app.safetyculture.com/report/audit/${auditUrlId}` : null;
+
+  pane.innerHTML = `
+  <div class="detail-top-bar">
+    <span class="detail-wo-badge">${esc(wo.wo_number)}</span>
+    <span class="detail-title-display" title="${esc(wo.title)}">${esc(wo.title)}</span>
+    <div id="saveIndicator" class="save-indicator"></div>
+    <button class="btn btn-delete btn-sm" onclick="deleteWO(${wo.id},'${esc(wo.wo_number)}')">Delete</button>
+  </div>
+  <div class="detail-tabs-bar">
+    <button class="detail-tab active" data-dtab="details" onclick="switchDetailTab('details')">Details</button>
+    <button class="detail-tab" data-dtab="notes" onclick="switchDetailTab('notes')">Notes</button>
+    <button class="detail-tab" data-dtab="attachments" onclick="switchDetailTab('attachments')">Attachments</button>
+    <button class="detail-tab" data-dtab="history" onclick="switchDetailTab('history')">History</button>
+    <button class="detail-tab" data-dtab="tasks" onclick="switchDetailTab('tasks')">Tasks</button>
+    <button class="detail-tab" data-dtab="subscribers" onclick="switchDetailTab('subscribers')">Subscribers</button>
+    <button class="detail-tab" data-dtab="updates" onclick="switchDetailTab('updates')">Updates</button>
+  </div>
+  <div class="wo-detail-scroll" id="woDetailScroll">
+    <!-- DETAILS TAB -->
+    <div class="detail-tab-pane active" id="dtab-details">
+      <div class="detail-card">
+        <div class="detail-header">
+          <div class="detail-header-left">
+            <div class="detail-wo-num">${esc(wo.wo_number)}</div>
+            <div class="detail-controls">
+              <input type="text" id="detailStatus" class="ctrl-select ${statusClass(wo.status)}" value="${esc(wo.status)}" readonly>
+              <input type="text" id="detailPriority" class="ctrl-select ${priorityClass(wo.priority)}" value="${esc(wo.priority)}" readonly>
+            </div>
+          </div>
+        </div>
+        <div class="detail-body">
+          <div class="field field-title">
+            <label>Subject</label>
+            <input type="text" id="detailTitle" value="${esc(wo.title)}" onblur="saveField(${wo.id},'title',this.value)">
+          </div>
+          <div class="field">
+            <label>Description</label>
+            <textarea id="detailDesc" onblur="saveField(${wo.id},'description',this.value)">${esc(wo.description||'')}</textarea>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Issue Type</label><div class="field-placeholder">\u2014 Not mapped yet \u2014</div></div>
+            <div class="field"><label>Substatus</label><div class="field-placeholder">\u2014 Not mapped yet \u2014</div></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Due Date</label><input type="date" id="detailDue" value="${dueVal}" onchange="saveField(${wo.id},'due_date',this.value||null)"></div>
+            <div class="field"><label>Assignee</label><input type="text" id="detailAssignee" value="${esc(wo.assignee||'')}" placeholder="Select or type a name\u2026" onblur="saveField(${wo.id},'assignee',this.value)"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Location / Site</label><input type="text" id="detailLocation" value="${esc(locationDisplay)}" placeholder="Select or type a site\u2026" onblur="saveField(${wo.id},'location',this.value)"></div>
+            <div class="field"><label>Asset</label><input type="text" id="detailAsset" value="${esc(wo.asset||'')}" placeholder="Select or type an asset\u2026" onblur="saveField(${wo.id},'asset',this.value)"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Entered By</label><div class="field-placeholder">\u2014 Not mapped yet \u2014</div></div>
+            <div class="field"><label>Organization</label><div class="field-placeholder">\u2014 Not mapped yet \u2014</div></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Next Action</label><div class="field-placeholder">\u2014 Not mapped yet \u2014</div></div>
+            <div class="field"><label>SLA Target</label><div class="field-placeholder">\u2014 Not mapped yet \u2014</div></div>
+          </div>
+          <div class="section-head"><div class="section-line"></div><div class="section-label">SafetyCulture</div><div class="section-line"></div></div>
+          <div class="sc-integration-grid">
+            ${linked ? `<div class="sc-box"><span class="sc-box-icon">\uD83D\uDD17</span><div class="sc-box-text"><div class="sc-box-label">Linked Action</div><div class="sc-box-id">${esc(wo.sc_action_id)}</div>${wo.sc_last_synced ? `<div class="sc-box-sync">Last synced ${fmtRelative(wo.sc_last_synced)}</div>` : ''}<a class="sc-box-link" href="${scUrl}" target="_blank" rel="noopener">\u2197 View in SafetyCulture</a></div></div>` : `<div class="sc-box unlinked"><span class="sc-box-icon">\u26AA</span><div class="sc-box-text"><div class="sc-box-label">Not linked to SafetyCulture</div><div class="sc-box-id">Changes will only exist in IssueTrak</div></div></div>`}
+            ${inspectionId ? `<div class="sc-box"><span class="sc-box-icon">\uD83D\uDCCB</span><div class="sc-box-text"><div class="sc-box-label">Linked Inspection</div><div class="sc-box-id">${esc(inspectionName || inspectionId)}</div>${inspectionItemName ? `<div class="sc-box-sync">${esc(inspectionItemName)}</div>` : ''}<div class="sc-box-links">${inspectionItemUrl ? `<a class="sc-box-link" href="${inspectionItemUrl}" target="_blank" rel="noopener">\u2197 View Inspection Item</a>` : ''}<a class="sc-box-link" href="${inspectionReportUrl}" target="_blank" rel="noopener">\u2197 View Inspection Report</a></div></div></div>` : `<div class="sc-box unlinked"><span class="sc-box-icon">\u26AA</span><div class="sc-box-text"><div class="sc-box-label">No linked inspection</div><div class="sc-box-id">Action was not created from an inspection</div></div></div>`}
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- NOTES TAB -->
+    <div class="detail-tab-pane" id="dtab-notes">
+      <div class="comments-card">
+        <div class="comment-list" id="commentList"><div class="empty-state" style="padding:14px"><p>Loading\u2026</p></div></div>
+      </div>
+      <div class="comment-compose">
+        <span class="comment-compose-hint">${linked ? '\u2194 Notes sync with SafetyCulture' : 'IssueTrak-only notes'}</span>
+        <div class="comment-compose-row">
+          <textarea id="commentInput" placeholder="Add a note\u2026 (Ctrl+Enter to send)"></textarea>
+          <button class="comment-send" onclick="postComment(${wo.id})" title="Send note">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- ATTACHMENTS TAB -->
+    <div class="detail-tab-pane" id="dtab-attachments">
+      <div class="detail-card"><div class="detail-body">
+        <div class="wo-media-section">
+          <div class="wo-media-row-header">
+            <a class="wo-media-link" href="#" onclick="event.preventDefault();switchTab('media')">View in Media Gallery</a>
+            <label class="btn btn-sm btn-outline" style="cursor:pointer;margin-left:auto">Upload Attachment<input type="file" id="woDetailUploadInput" accept="image/*,video/*,application/pdf" style="display:none" onchange="handleDetailMediaUpload(this,${wo.id})"></label>
+          </div>
+          <div class="wo-media-mini-grid" id="woMediaMiniGrid"><div style="color:var(--text-faint);font-size:11px">Loading media\u2026</div></div>
+        </div>
+      </div></div>
+    </div>
+    <!-- HISTORY TAB (placeholder) -->
+    <div class="detail-tab-pane" id="dtab-history">
+      <div class="detail-card"><div class="detail-body" style="padding:32px;text-align:center">
+        <div style="font-size:36px;opacity:0.2;margin-bottom:8px">&#128197;</div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:4px">Substatus History</div>
+        <div style="font-size:11px;color:var(--text-faint);margin-bottom:8px">Track time spent in each status phase with duration tracking.</div>
+        <span class="placeholder-badge">Coming Soon</span>
+      </div></div>
+    </div>
+    <!-- TASKS TAB (placeholder) -->
+    <div class="detail-tab-pane" id="dtab-tasks">
+      <div class="detail-card"><div class="detail-body" style="padding:32px;text-align:center">
+        <div style="font-size:36px;opacity:0.2;margin-bottom:8px">&#9989;</div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:4px">Tasks</div>
+        <div style="font-size:11px;color:var(--text-faint);margin-bottom:8px">Assign and track checklist tasks for this issue.</div>
+        <span class="placeholder-badge">Coming Soon</span>
+      </div></div>
+    </div>
+    <!-- SUBSCRIBERS TAB (placeholder) -->
+    <div class="detail-tab-pane" id="dtab-subscribers">
+      <div class="detail-card"><div class="detail-body" style="padding:32px;text-align:center">
+        <div style="font-size:36px;opacity:0.2;margin-bottom:8px">&#128101;</div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:4px">Subscribers</div>
+        <div style="font-size:11px;color:var(--text-faint);margin-bottom:8px">Manage notification recipients for this issue.</div>
+        <span class="placeholder-badge">Coming Soon</span>
+      </div></div>
+    </div>
+    <!-- UPDATES TAB (placeholder) -->
+    <div class="detail-tab-pane" id="dtab-updates">
+      <div class="detail-card"><div class="detail-body" style="padding:32px;text-align:center">
+        <div style="font-size:36px;opacity:0.2;margin-bottom:8px">&#128221;</div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:4px">Updates Log</div>
+        <div style="font-size:11px;color:var(--text-faint);margin-bottom:8px">Full audit trail of all changes made to this issue.</div>
+        <span class="placeholder-badge">Coming Soon</span>
+      </div></div>
+    </div>
+  </div>`;
+
+  initDetailPicklists(wo.id);
+  document.getElementById('commentInput').addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); postComment(wo.id); }
+  });
+  loadComments(wo.id);
+  loadWoMedia(wo.id);
+}
+
+function refreshDetailControls(wo) {
+  const focused  = document.activeElement;
+  const status   = document.getElementById('detailStatus');
+  const priority = document.getElementById('detailPriority');
+  const title    = document.getElementById('detailTitle');
+  const desc     = document.getElementById('detailDesc');
+  const due      = document.getElementById('detailDue');
+  const assignee = document.getElementById('detailAssignee');
+  const location = document.getElementById('detailLocation');
+  const asset    = document.getElementById('detailAsset');
+  if (status   && focused !== status)   { status.value = wo.status;   status.className = `ctrl-select ${statusClass(wo.status)}`; }
+  if (priority && focused !== priority) { priority.value = wo.priority; priority.className = `ctrl-select ${priorityClass(wo.priority)}`; }
+  if (title    && focused !== title)    title.value    = wo.title;
+  if (desc     && focused !== desc)     desc.value     = wo.description || '';
+  if (due      && focused !== due)      due.value      = fmtDateInput(wo.due_date);
+  if (assignee && focused !== assignee) assignee.value = wo.assignee || '';
+  if (location && focused !== location) location.value = resolveSiteName(wo.location || '');
+  if (asset    && focused !== asset)    asset.value    = wo.asset || '';
+}
+
+// ===================== SAVE FIELD =====================
+async function saveField(woId, field, value, el) {
+  setSave('saving');
+  try {
+    const r = await fetch(`/api/work-orders/${woId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ [field]: value === '' ? null : value }),
+    });
+    if (!r.ok) throw new Error(await r.text());
+    const updated = await r.json();
+    const idx = workOrders.findIndex(w => w.id === woId);
+    if (idx >= 0) workOrders[idx] = updated;
+    applyFilters();
+    setSave('saved');
+    if (field === 'status'   && el) el.className = `ctrl-select ${statusClass(value)}`;
+    if (field === 'priority' && el) el.className = `ctrl-select ${priorityClass(value)}`;
+  } catch (e) { console.error(e); setSave('error'); }
+}
+
+function setSave(state) {
+  const el = document.getElementById('saveIndicator');
+  if (!el) return;
+  const labels  = { saving: 'Saving\u2026', saved: '\u2713 Saved', error: '\u2717 Failed' };
+  const classes = { saving: 'saving', saved: 'saved', error: 'error' };
+  el.textContent = labels[state] || '';
+  el.className   = 'save-indicator ' + (classes[state] || '');
+  if (state === 'saved') {
+    clearTimeout(el._t);
+    el._t = setTimeout(() => { if (el.textContent === '\u2713 Saved') { el.textContent = ''; el.className = 'save-indicator'; } }, 2200);
+  }
+}
+
+// ===================== DELETE WO =====================
+async function deleteWO(woId, woNumber) {
+  if (!confirm(`Delete ${woNumber}? This cannot be undone.`)) return;
+  try {
+    const r = await fetch(`/api/work-orders/${woId}`, { method: 'DELETE' });
+    if (!r.ok) throw new Error(await r.text());
+    selectedWOId = null;
+    await fetchWorkOrders();
+    document.getElementById('woDetailPane').innerHTML = `
+      <div class="wo-detail-scroll" style="justify-content:center">
+        <div class="detail-empty">
+          <div class="detail-empty-icon">&#128203;</div>
+          <div class="detail-empty-title">No issue selected</div>
+          <div class="detail-empty-sub">Select an issue from the list or create a new one</div>
+          <br><button class="btn btn-primary" style="padding:7px 16px;font-size:13px" onclick="openCreateModal()">+ New Issue</button>
+        </div>
+      </div>`;
+    showToast(`${woNumber} deleted`);
+  } catch (e) { showToast('Failed to delete'); console.error(e); }
+}
+
+// ===================== COMMENTS =====================
+async function loadComments(woId) {
+  try {
+    const r = await fetch(`/api/work-orders/${woId}/comments`);
+    const d = await r.json();
+    renderComments(d.comments || []);
+  } catch (e) {
+    const el = document.getElementById('commentList');
+    if (el) el.innerHTML = '<div class="empty-state" style="padding:12px"><p>Failed to load comments</p></div>';
+  }
+}
+
+function renderComments(comments) {
+  const el = document.getElementById('commentList');
+  if (!el) return;
+  if (!comments.length) {
+    el.innerHTML = '<div class="empty-state" style="padding:12px"><p>No notes yet. Use the field below to add one.</p></div>';
+    return;
+  }
+  el.innerHTML = comments.map(c => `
+    <div class="comment-item">
+      <div class="comment-meta">
+        <span class="comment-author">${esc(c.author || 'Unknown')}</span>
+        <span class="comment-src ${c.source === 'sc' ? 'from-sc' : 'from-issuetracker'}">${c.source === 'sc' ? 'SafetyCulture' : 'IssueTrak'}</span>
+        <span class="comment-time">${fmtFull(c.created_at)}</span>
+      </div>
+      <div class="comment-body">${esc(c.body)}</div>
+    </div>`).join('');
+}
+
+async function postComment(woId) {
+  const input = document.getElementById('commentInput');
+  const text  = (input.value || '').trim();
+  if (!text) { input.focus(); return; }
+  input.disabled = true;
+  try {
+    const r = await fetch(`/api/work-orders/${woId}/comments`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ body: text, author: 'User' }),
+    });
+    if (!r.ok) throw new Error(await r.text());
+    input.value = '';
+    await loadComments(woId);
+    showToast('Note posted');
+  } catch (e) { showToast('Failed to post note'); }
+  finally { input.disabled = false; input.focus(); }
+}
+
+// ===================== API LOG =====================
+function renderLogTable(logs) {
+  const body = document.getElementById('logBody');
+  if (!logs.length) { body.innerHTML = '<tr><td colspan="7" class="log-empty">No API events recorded yet</td></tr>'; return; }
+  body.innerHTML = logs.map(l => {
+    const dirCls = l.direction.startsWith('SC') ? 'dir-sc-it' : 'dir-it-sc';
+    const stCls  = l.status === 'error' ? 'st-error' : 'st-ok';
+    const scId   = l.sc_action_id
+      ? `<span style="font-family:monospace;font-size:10px;color:var(--text-faint)">${esc(l.sc_action_id.slice(0,8))}\u2026</span>` : '\u2014';
+    return `<tr>
+      <td style="white-space:nowrap;color:var(--text-muted)">${fmtFull(l.timestamp)}</td>
+      <td><span class="${dirCls}">${esc(l.direction)}</span></td>
+      <td style="font-weight:500">${esc(l.event_type)}</td>
+      <td>${l.wo_number ? `<b>${esc(l.wo_number)}</b>` : '\u2014'}</td>
+      <td>${scId}</td>
+      <td style="max-width:280px;word-break:break-word;color:var(--text-muted)">${esc(l.details)}</td>
+      <td class="${stCls}">${esc(l.status || 'success')}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ===================== CREATE MODAL =====================
+function openCreateModal() {
+  document.getElementById('createModal').classList.add('open');
+  setTimeout(() => document.getElementById('newTitle').focus(), 60);
+}
+function closeCreateModal() {
+  document.getElementById('createModal').classList.remove('open');
+  ['newTitle','newDesc','newDue','newAssignee','newLocation','newAsset'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  document.getElementById('newStatus').value   = 'Open';
+  document.getElementById('newPriority').value = 'Medium';
+}
+function handleBackdropClick(e, modalId) {
+  if (e.target === e.currentTarget && modalId === 'createModal') closeCreateModal();
+}
+
+async function submitCreate() {
+  const title = document.getElementById('newTitle').value.trim();
+  if (!title) { document.getElementById('newTitle').focus(); return; }
+  const payload = {
+    title,
+    description: document.getElementById('newDesc').value,
+    status:      document.getElementById('newStatus').value,
+    priority:    document.getElementById('newPriority').value,
+    due_date:    document.getElementById('newDue').value || undefined,
+    assignee:    document.getElementById('newAssignee').value || undefined,
+    location:    document.getElementById('newLocation').value || undefined,
+    asset:       document.getElementById('newAsset').value || undefined,
+  };
+  try {
+    const r = await fetch('/api/work-orders', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+    });
+    if (!r.ok) throw new Error(await r.text());
+    const wo = await r.json();
+    closeCreateModal();
+    await fetchWorkOrders();
+    // Switch to Issue Hub and select the new WO
+    switchTab('work-orders');
+    selectWO(wo.id);
+    showToast(`\u2713 ${wo.wo_number} created`);
+  } catch (e) { showToast('Failed to create issue'); console.error(e); }
+}
+
+// ===================== SSE =====================
+let _sseBackoff = 1000;
+function connectSSE() {
+  const es = new EventSource('/api/events');
+  es.onopen = () => { _sseBackoff = 1000; };
+  es.onmessage = e => {
+    try {
+      const data = JSON.parse(e.data);
+      if (data.type === 'sync' || data.type === 'wo_update' ||
+          data.type === 'wo_delete' || data.type === 'wo_bulk_delete') {
+        clearTimeout(_debounce);
+        _debounce = setTimeout(fetchWorkOrders, 1200);
+      }
+    } catch (_) {}
+  };
+  es.onerror = () => {
+    es.close();
+    setTimeout(connectSSE, _sseBackoff);
+    _sseBackoff = Math.min(_sseBackoff * 2, 30000);
+  };
+}
+
+// ===================== SYNC =====================
+async function triggerSync() {
+  try {
+    await fetch('/api/sync/trigger', { method: 'POST' });
+    showToast('Sync triggered');
+    setTimeout(fetchWorkOrders, 2500);
+  } catch (e) {}
+}
+
+// ===================== SIDEBAR RESIZE =====================
+(function initResize() {
+  const handle  = document.getElementById('resizeHandle');
+  const listPane = document.getElementById('woListPane');
+  if (!handle || !listPane) return;
+  let dragging = false, startX, startW;
+  handle.addEventListener('mousedown', e => {
+    e.preventDefault(); dragging = true; startX = e.clientX; startW = listPane.offsetWidth;
+    handle.classList.add('dragging');
+    document.body.style.cursor = 'col-resize'; document.body.style.userSelect = 'none';
+  });
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const newW = Math.max(200, Math.min(600, startW + (e.clientX - startX)));
+    listPane.style.width = newW + 'px';
+  });
+  document.addEventListener('mouseup', () => {
+    if (!dragging) return; dragging = false;
+    handle.classList.remove('dragging');
+    document.body.style.cursor = ''; document.body.style.userSelect = '';
+  });
+})();
+
+// ===================== MEDIA =====================
+let _allMedia = [];
+let _currentUploadWoId = null;
+
+function mediaSrcLabel(source) {
+  if (source === 'sc_action')     return 'SC Action';
+  if (source === 'sc_inspection') return 'SC Inspection';
+  return 'IssueTrak';
+}
+function mediaSrcClass(source) { return source.startsWith('sc') ? 'src-sc' : 'src-it'; }
+function mediaIconForType(type) {
+  if (type === 'video') return '\uD83C\uDFA5';
+  if (type === 'pdf')   return '\uD83D\uDCC4';
+  if (type === 'doc')   return '\uD83D\uDCDD';
+  return '\uD83D\uDDBC';
+}
+function mediaProxyUrl(mediaId) { return `/api/media/${mediaId}/proxy`; }
+
+function openLightbox(src, label, source) {
+  const lb = document.getElementById('lightbox');
+  document.getElementById('lightboxImg').src = src;
+  document.getElementById('lightboxLabel').textContent = label || '';
+  document.getElementById('lightboxSrc').textContent = source ? `Source: ${mediaSrcLabel(source)}` : '';
+  lb.classList.add('open');
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.getElementById('lightboxImg').src = '';
+}
+
+async function loadWoMedia(woId) {
+  const grid = document.getElementById('woMediaMiniGrid');
+  if (!grid) return;
+  try {
+    const r = await fetch(`/api/work-orders/${woId}/media`);
+    const d = await r.json();
+    renderWoMiniMedia(d.media || [], woId, grid);
+  } catch (e) {
+    if (grid) grid.innerHTML = '<div style="color:var(--text-faint);font-size:11px">Failed to load media</div>';
+  }
+}
+
+function renderWoMiniMedia(media, woId, grid) {
+  if (!grid) return;
+  if (!media.length) {
+    grid.innerHTML = '<div style="color:var(--text-faint);font-size:11px">No attachments yet. Upload a file or sync from SafetyCulture.</div>';
+    return;
+  }
+  grid.innerHTML = media.map(m => {
+    const isImg = m.media_type === 'image';
+    const proxyUrl = mediaProxyUrl(m.id);
+    if (isImg) {
+      return `<div class="wo-mini-thumb" title="${esc(m.label)}" onclick="openLightbox('${proxyUrl}','${esc(m.label)}','${esc(m.source)}')">
+        <img src="${proxyUrl}" alt="${esc(m.label)}" loading="lazy" onerror="this.style.display='none';this.nextSibling.style.display='flex'">
+        <div class="wo-mini-thumb-icon" style="display:none">${mediaIconForType(m.media_type)}</div>
+      </div>`;
+    }
+    return `<div class="wo-mini-thumb" title="${esc(m.label)}" onclick="openLightbox('${proxyUrl}','${esc(m.label)}','${esc(m.source)}')">
+      <div class="wo-mini-thumb-icon">${mediaIconForType(m.media_type)}</div>
+    </div>`;
+  }).join('');
+}
+
+async function loadAllMedia() {
+  const pane = document.getElementById('mediaGalleryPane');
+  if (!pane) return;
+  pane.innerHTML = '<div class="empty-state"><p>Loading\u2026</p></div>';
+  try {
+    const r = await fetch('/api/media');
+    const d = await r.json();
+    _allMedia = d.media || [];
+    renderMediaGallery(_allMedia, pane);
+    const cnt = document.getElementById('mediaCount');
+    if (cnt) cnt.textContent = _allMedia.length ? `${_allMedia.length} item${_allMedia.length !== 1 ? 's' : ''}` : '';
+  } catch (e) { pane.innerHTML = '<div class="empty-state"><p>Failed to load media</p></div>'; }
+}
+
+function renderMediaGallery(media, pane) {
+  if (!media.length) {
+    pane.innerHTML = '<div class="empty-state"><p>No media yet. Upload from a work order or sync from SafetyCulture.</p></div>';
+    return;
+  }
+  const groups = new Map();
+  media.forEach(m => {
+    const key = m.wo_id;
+    if (!groups.has(key)) groups.set(key, { wo_number: m.wo_number, wo_title: m.wo_title, wo_id: m.wo_id, items: [] });
+    groups.get(key).items.push(m);
+  });
+  pane.innerHTML = '';
+  groups.forEach(grp => {
+    const section = document.createElement('div');
+    section.className = 'media-wo-group';
+    section.innerHTML = `
+      <div class="media-wo-header">
+        <div class="media-wo-title">
+          <div class="media-wo-num">${esc(grp.wo_number)}</div>
+          <div class="media-wo-name">${esc(grp.wo_title)}</div>
+        </div>
+        <span class="count-chip">${grp.items.length} item${grp.items.length !== 1 ? 's' : ''}</span>
+        <label class="btn btn-sm btn-outline" style="cursor:pointer">Upload<input type="file" accept="image/*,video/*,application/pdf" style="display:none" onchange="handleGalleryMediaUpload(this,${grp.wo_id})"></label>
+      </div>
+      <div class="media-grid" id="media-grid-${grp.wo_id}">
+        ${renderMediaThumbs(grp.items)}
+        ${renderUploadTile(grp.wo_id)}
+      </div>`;
+    pane.appendChild(section);
+  });
+}
+
+function renderMediaThumbs(items) {
+  return items.map(m => {
+    const isImg = m.media_type === 'image';
+    const proxyUrl = mediaProxyUrl(m.id);
+    const srcBadge = `<span class="media-source-badge ${mediaSrcClass(m.source)}">${m.source.startsWith('sc') ? 'SC' : 'IT'}</span>`;
+    const delBtn = `<button class="media-delete-btn" title="Delete" onclick="event.stopPropagation();deleteMedia(${m.id},${m.wo_id})">&#10005;</button>`;
+    if (isImg) {
+      return `<div class="media-thumb" onclick="openLightbox('${proxyUrl}','${esc(m.label)}','${esc(m.source)}')">
+        ${srcBadge}${delBtn}
+        <img class="media-thumb-img" src="${proxyUrl}" alt="${esc(m.label)}" loading="lazy" onerror="this.style.display='none';this.nextSibling.style.display='flex'">
+        <div class="media-thumb-icon" style="display:none">${mediaIconForType(m.media_type)}</div>
+        <div class="media-thumb-body"><div class="media-thumb-label">${esc(m.label)}</div></div>
+      </div>`;
+    }
+    return `<div class="media-thumb" onclick="openLightbox('${proxyUrl}','${esc(m.label)}','${esc(m.source)}')">
+      ${srcBadge}${delBtn}
+      <div class="media-thumb-icon">${mediaIconForType(m.media_type)}</div>
+      <div class="media-thumb-body"><div class="media-thumb-label">${esc(m.label)}</div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderUploadTile(woId) {
+  return `<label class="media-upload-area" id="upload-tile-${woId}"
+    ondragover="event.preventDefault();this.classList.add('drag-over')"
+    ondragleave="this.classList.remove('drag-over')"
+    ondrop="event.preventDefault();this.classList.remove('drag-over');handleDropUpload(event,${woId})">
+    <input type="file" accept="image/*,video/*,application/pdf" style="display:none" onchange="handleGalleryMediaUpload(this,${woId})">
+    <span class="media-upload-icon">&#128228;</span><span>Click or drag to upload</span>
+  </label>`;
+}
+
+async function uploadMediaFile(woId, file) {
+  if (!file) return;
+  const fd = new FormData();
+  fd.append('file', file);
+  try {
+    const r = await fetch(`/api/work-orders/${woId}/media`, { method: 'POST', body: fd });
+    if (!r.ok) throw new Error(await r.text());
+    showToast('\u2713 Media uploaded');
+    if (selectedWOId === woId) loadWoMedia(woId);
+    const mediaPaneActive = document.getElementById('tab-media')?.classList.contains('active');
+    if (mediaPaneActive) loadAllMedia();
+    return await r.json();
+  } catch (e) { showToast('Failed to upload media'); console.error(e); return null; }
+}
+
+function handleDetailMediaUpload(input, woId) { const file = input.files[0]; input.value = ''; if (file) uploadMediaFile(woId, file); }
+function handleGalleryMediaUpload(input, woId) { const file = input.files[0]; input.value = ''; if (file) uploadMediaFile(woId, file); }
+function handleGlobalMediaUpload(input) {
+  const file = input.files[0]; input.value = '';
+  if (!file) return;
+  if (selectedWOId) { uploadMediaFile(selectedWOId, file); }
+  else { showToast('Select an issue first, then upload from its detail panel.'); }
+}
+function handleDropUpload(event, woId) { const file = event.dataTransfer?.files?.[0]; if (file) uploadMediaFile(woId, file); }
+
+async function deleteMedia(mediaId, woId) {
+  if (!confirm('Remove this media item?')) return;
+  try {
+    const r = await fetch(`/api/work-orders/${woId}/media/${mediaId}`, { method: 'DELETE' });
+    if (!r.ok) throw new Error(await r.text());
+    showToast('Media removed');
+    if (selectedWOId === woId) loadWoMedia(woId);
+    loadAllMedia();
+  } catch (e) { showToast('Failed to remove media'); }
+}
+
+// Keyboard close for lightbox/modal
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if (document.getElementById('lightbox').classList.contains('open')) { closeLightbox(); return; }
+    if (document.getElementById('createModal').classList.contains('open')) closeCreateModal();
+  }
+});
+
+// ===================== BOOT =====================
+init();
+</script>
+</body>
+</html>
