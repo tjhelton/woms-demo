@@ -505,7 +505,7 @@ body {
 /* =================== REPORTING =================== */
 .report-grid {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 14px; padding: 16px;
-  flex: 1; overflow: auto; align-content: start;
+  flex: 1; overflow-y: auto; align-content: start; min-height: 0;
 }
 .report-panel {
   background: var(--surface); border-radius: var(--radius-lg);
