@@ -168,7 +168,15 @@ echo.
 :venv_ready
 
 REM ---- Ensure .env exists ----
-if not exist ".env" copy .env.example .env >nul
+if not exist ".env" (
+    if exist ".env.example" (
+        copy .env.example .env >nul
+    ) else (
+        (echo SC_API_TOKEN=)> .env
+        (echo SC_API_BASE=https://api.safetyculture.io)>> .env
+        (echo SYNC_INTERVAL_SECONDS=10)>> .env
+    )
+)
 
 REM ---- Always prompt for API token ----
 set "CURRENT_TOKEN="

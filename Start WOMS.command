@@ -148,7 +148,15 @@ fi
 
 # ---- Ensure .env exists ----
 if [ ! -f ".env" ]; then
-    cp .env.example .env
+    if [ -f ".env.example" ]; then
+        cp .env.example .env
+    else
+        cat > .env <<'ENVEOF'
+SC_API_TOKEN=
+SC_API_BASE=https://api.safetyculture.io
+SYNC_INTERVAL_SECONDS=10
+ENVEOF
+    fi
 fi
 
 # ---- Always prompt for API token ----
